@@ -4,8 +4,8 @@ This directory holds project planning and development evidence. Application code
 
 - [Product and architecture design](design.md)
 - Future implementation plan: `plan.md`
-- Future progress and verification log: `progress.md`
-- Future review records: `reviews/`
+- [Progress and verification log](progress.md)
+- Review records: `reviews/`
 - Future deferred ideas: `deferred.md`
 
 The written design is awaiting review. Implementation planning begins only after that review is approved.
