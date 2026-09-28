@@ -35,11 +35,17 @@
 
 **Files:**
 - Create: `backend/pom.xml`
-- Create: `backend/mvnw`, `backend/mvnw.cmd`, `backend/.mvn/wrapper/*`
+- Create: `backend/mvnw`, `backend/mvnw.cmd`, `backend/.mvn/wrapper/maven-wrapper.properties`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/Application.java`
 - Create: `backend/src/main/resources/application.yml`
 - Create: `backend/src/test/resources/application-test.yml`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/*`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/Ruleset.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/RulesetRegistry.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/DiceRoll.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/ScoreSheet.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/ScoreEvaluation.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/ScoreTotals.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/ScorecardValidator.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/rules/RulesetConformanceTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/ArchitectureTest.java`
 - Create: `compose.yaml`
@@ -70,10 +76,14 @@ interface Ruleset {
 @MethodSource("allConformanceCases")
 void matchesSharedFixture(ConformanceCase fixture) {
     var ruleset = registry.require(fixture.ruleset(), fixture.version());
-    assertThat(ruleset.evaluate(fixture.category(), fixture.roll(), fixture.prior()))
-        .isEqualTo(fixture.expectedEvaluation());
+    var evaluation = ruleset.evaluate(fixture.category(), fixture.roll(), fixture.prior());
+    assertThat(evaluation).isEqualTo(fixture.expectedEvaluation());
+    assertThat(ruleset.totals(fixture.prior().withApplied(fixture.category(), evaluation)))
+        .isEqualTo(fixture.expectedTotals());
 }
 ```
+
+The loader requires `expectedTotals` for every case. Include completed-sheet fixtures for all three rulesets and Classic repeated-Yahtzee totals, so Dart and Java prove identical category, bonus, subtotal, and final-total behavior.
 
 Run: `cd backend && ./mvnw -Dtest=RulesetConformanceTest test`
 
@@ -132,9 +142,13 @@ git commit -m "build: scaffold ranked Spring backend"
 **Files:**
 - Create: `backend/src/main/resources/db/migration/V1__identity_and_profiles.sql`
 - Create: `backend/src/main/resources/regions/country-continent-v1.csv`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/*`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/*`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/security/*`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/ExternalIdentityVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/IdentityService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/RefreshSessionService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/ProfileService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/RegionCatalog.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/security/AccessTokenService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/security/SecurityConfiguration.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/AuthController.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/ProfileController.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/identity/IdentityExchangeIntegrationTest.java`
@@ -143,7 +157,7 @@ git commit -m "build: scaffold ranked Spring backend"
 
 **Interfaces:**
 - Consumes: backend foundation.
-- Produces: `/v1/auth/exchange`, `/v1/auth/refresh`, `/v1/auth/link`, `/v1/auth/sessions/current`, `/v1/profile`, stable `PlayerId`, authenticated principal.
+- Produces: `/v1/auth/exchange`, `/v1/auth/refresh`, `/v1/auth/link`, `GET/DELETE /v1/auth/sessions/current`, `/v1/profile`, stable `PlayerId`, authenticated principal.
 
 - [ ] **Step 1: Write migrations and failing repository tests**
 
@@ -166,6 +180,8 @@ Controlled test JWK issuers cover valid Apple/Google tokens plus bad signature, 
 - [ ] **Step 3: Implement exchange and backend sessions**
 
 Access JWT lifetime is 15 minutes. Refresh token lifetime is 30 days, generated with 256 bits of secure randomness, stored as SHA-256 hash, and rotated on every use. Reuse of a consumed refresh token revokes that session family.
+
+Add `RefreshSessionService.revokeCurrent(PlayerId, SessionId)` and `DELETE /v1/auth/sessions/current`. Revocation is idempotent, invalidates the complete refresh-token family, and makes every later refresh return `SESSION_REVOKED`. Write the failing revoked-family test before adding the controller method, then run only `RefreshRotationIntegrationTest` until green.
 
 Return:
 
@@ -201,20 +217,25 @@ git commit -m "feat: add federated identity and player profiles"
 
 **Files:**
 - Create: `backend/src/main/resources/db/migration/V2__game_results.sql`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/*`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameResult.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameResultRepository.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameSubmissionService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameAcceptedListener.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/RulesetAvailability.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/RulesetAvailabilityRegistry.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/GameResultController.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/games/GameSubmissionIntegrationTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/games/GameSubmissionConcurrencyTest.java`
 
 **Interfaces:**
 - Consumes: authenticated `PlayerId`, profile region, `ScorecardValidator`.
-- Produces: `POST /v1/ranked-games`, immutable accepted `GameResult`, event/call boundary for summary refresh.
+- Produces: `POST /v1/ranked-games`, immutable accepted `GameResult`, and `GameAcceptedListener` transaction callback.
 
 - [ ] **Step 1: Write migration and failing API tests**
 
 `game_result` stores UUID, player, ruleset ID/version, client completion, server receipt, snapshotted country/continent, JSONB category scores, JSONB named bonuses, final score, app version, and canonical request SHA-256. Enforce unique game UUID and nonnegative numeric checks.
 
-Test valid result, unsupported ruleset, missing/extra category, impossible numeric value, bad bonus, bad total, missing profile region, and unknown app payload field handling.
+Test valid result, unsupported ruleset, retired-for-ranking ruleset, missing/extra category, impossible numeric value, bad bonus, bad total, missing profile region, and unknown app payload field handling. `RulesetAvailability` carries `playable`, `rankedSubmissionEnabled`, and `historicalReadable`; submission requires the middle flag while history remains readable.
 
 - [ ] **Step 2: Define exact request/response records**
 
@@ -234,7 +255,15 @@ Success returns accepted game ID, canonical server total, server receipt instant
 
 - [ ] **Step 3: Implement canonical hashing and transaction**
 
-Canonicalize the validated request with sorted category keys. On duplicate UUID: same player plus same hash returns original `200`; different content or different player returns `GAME_ID_CONFLICT`. The transaction locks/creates once and invokes summary refresh exactly once.
+Define the callback before implementing the transaction:
+
+```java
+public interface GameAcceptedListener {
+    void onAccepted(GameResult accepted);
+}
+```
+
+Task 12 registers one `@Primary` no-op listener in production and a counting spy in the concurrency test. `GameSubmissionService.submit()` canonicalizes sorted category and bonus keys, inserts the result, and invokes the listener after the insert in the same Spring transaction; a listener failure rolls back both. On duplicate UUID: same player plus same hash returns original `200` without invoking the listener; different content or different player returns `GAME_ID_CONFLICT`.
 
 - [ ] **Step 4: Test concurrent duplicates with PostgreSQL**
 
@@ -255,8 +284,10 @@ git commit -m "feat: accept idempotent ranked game results"
 
 **Files:**
 - Create: `backend/src/main/resources/db/migration/V3__weekly_leaderboards.sql`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/leaderboard/*`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/statistics/*`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/leaderboard/LeaderboardRefreshService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/leaderboard/LeaderboardQueryService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/leaderboard/LeaderboardCursorCodec.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/statistics/PersonalStatisticsService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/LeaderboardController.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/StatisticsController.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/leaderboard/LeaderboardIntegrationTest.java`
@@ -279,9 +310,11 @@ Use an injected `Clock`. Submit at Sunday `23:59:59.999Z` and Monday `00:00:00Z`
 
 Key summaries by `(week_start, ruleset_id, ruleset_version, scope, region_code, player_id)`. Store game count, last-ten sum, average decimal, best score, achieved-at, and refreshed-at. Refresh GLOBAL plus the accepted result's COUNTRY and CONTINENT rows inside the game transaction using deterministic SQL window queries.
 
+`LeaderboardRefreshService implements GameAcceptedListener`; replacing Task 12's no-op bean requires no change to `GameSubmissionService`. Add a transaction rollback test proving a refresh failure leaves neither result nor summary row committed.
+
 - [ ] **Step 4: Implement keyset pagination**
 
-`GET /v1/leaderboards/{rulesetId}/{version}?week=YYYY-MM-DD&scope=COUNTRY&region=PL&limit=50&cursor=...` validates scope/region agreement. Sign cursors with server HMAC and encode ordering tuple; reject altered or mismatched cursors.
+`GET /v1/leaderboards/{rulesetId}/{version}?week=YYYY-MM-DD&scope=COUNTRY&region=PL&limit=50&cursor=...` validates scope/region agreement. It is a public Spring Security/OpenAPI route. Guests provide an explicit country/continent chosen in local settings; GLOBAL needs no region. Sign cursors with server HMAC and encode ordering tuple; reject altered or mismatched cursors. Add MockMvc tests that all three scopes are readable without a bearer token and private `/v1/me/**` routes still return `401`.
 
 `GET /v1/me/statistics` and `/v1/me/games` return accepted ranked history only, never claim to include device-local games.
 
@@ -303,8 +336,14 @@ git commit -m "feat: add weekly regional leaderboards"
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/ApiError.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/ApiExceptionHandler.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/AccountDeletionService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/security/ApiRateLimitFilter.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/NicknamePolicy.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/RulesetAvailabilityController.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/api/OpenApiContractTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/profile/AccountDeletionIntegrationTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/security/RateLimitIntegrationTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/profile/NicknamePolicyTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/operations/BackupRestoreReadinessTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/BackendEndToEndTest.java`
 - Modify: `backend/src/main/resources/application.yml`
 - Modify: `compose.yaml`
@@ -314,7 +353,7 @@ git commit -m "feat: add weekly regional leaderboards"
 
 **Interfaces:**
 - Consumes: Tasks 10–13 APIs.
-- Produces: versioned OpenAPI contract, stable error envelope, deletion semantics, health/metrics/logging, backend alpha evidence.
+- Produces: versioned OpenAPI contract, public ruleset-availability metadata, stable error envelope, deletion semantics, security/operational controls, health/metrics/logging, backend alpha evidence.
 
 - [ ] **Step 1: Write the OpenAPI contract before controller alignment**
 
@@ -330,9 +369,13 @@ Define every request/response, bearer security, pagination cursor, enum, timesta
 
 Write a test that loads `api/openapi.yaml`, validates it, and compares documented routes/status codes to Spring MVC mappings.
 
+Document `GET /v1/rulesets` as public. Each item exposes immutable ID/version plus `playable`, `rankedSubmissionEnabled`, and `historicalReadable`. Historical game and leaderboard reads accept retired versions when `historicalReadable=true`; `POST /v1/ranked-games` returns `RULESET_RANKING_RETIRED` when new ranked submissions are disabled.
+
 - [ ] **Step 2: Implement stable exception mapping and observability**
 
 Return no translated prose from business errors. Add request correlation ID generation/propagation, structured JSON production logs without tokens/payloads, Actuator health/readiness, and Micrometer counters for identity exchange, accepted/rejected submissions, and leaderboard latency.
+
+First add failing tests, then enforce explicit maximum lengths/counts in OpenAPI and Bean Validation: provider credential 16 KiB, nickname 24 Unicode code points, app version 64 characters, cursor 2 KiB, at most 20 category/bonus entries, and request body 64 KiB. `NicknamePolicy` applies normalized allow/block lists and returns `NICKNAME_NOT_ALLOWED`. `ApiRateLimitFilter` uses per-IP limits for public auth/leaderboard routes and per-player limits for authenticated writes, returns `429 RATE_LIMITED` with `Retry-After`, and has deterministic injected-clock tests. Configuration keeps thresholds externalized and production defaults nonzero.
 
 - [ ] **Step 3: Implement account deletion transaction**
 
@@ -341,6 +384,8 @@ Require recent provider reauthentication. Revoke sessions and identities, remove
 - [ ] **Step 4: Add backend end-to-end scenario**
 
 Using Testcontainers plus controlled identity issuer: exchange identity, set Poland, submit ten games, repeat one UUID, query PL/Europe/global boards, change country, query personal history, refresh session, then delete account and verify removal/revocation.
+
+Add `backend/tool/backup-restore-readiness.sh`: create a dump with `pg_dump`, restore it with `pg_restore` into a second disposable database, and run SQL assertions for profiles, accepted games, region snapshots, and summary rows. `BackupRestoreReadinessTest` verifies the script/config contract; the checkpoint gate runs the script against Compose and records the restore result.
 
 - [ ] **Step 5: Run complete backend alpha gate**
 
@@ -356,6 +401,7 @@ for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
 done
 curl --fail http://localhost:8080/actuator/health
 kill "$BACKEND_PROCESS_ID"
+./backend/tool/backup-restore-readiness.sh
 docker compose down
 ```
 

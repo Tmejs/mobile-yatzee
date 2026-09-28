@@ -62,7 +62,7 @@
 - Execute Plan 3 only after checkpoints 9 and 14 are merged.
 - Release an internal/early-access build after checkpoint 17 with monetization flags disabled.
 - Measure retention outside this repository. Execute Plan 4 only after the user explicitly decides to enable monetization work.
-- Update `codex/progress.md`, the relevant review record, and the root `README.md` at the end of every checkpoint.
+- Update `codex/progress.md` and the relevant review record at every checkpoint. Update the root `README.md` at user-facing milestones or whenever verified behavior, setup, or commands change.
 
 ## Checkpoint gate used by every task
 

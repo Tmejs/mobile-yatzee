@@ -97,8 +97,11 @@ class MobileYatzeeApp extends StatelessWidget {
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-dart format --output=none --set-exit-if-changed lib test integration_test 2>/dev/null || \
-  dart format --output=none --set-exit-if-changed lib test
+FORMAT_PATHS=(lib test)
+if [[ -d integration_test ]]; then
+  FORMAT_PATHS+=(integration_test)
+fi
+dart format --output=none --set-exit-if-changed "${FORMAT_PATHS[@]}"
 flutter analyze
 flutter test
 ```
@@ -152,7 +155,14 @@ Use this fixture shape:
       "selectable": true,
       "valid": true,
       "score": 18,
-      "bonusDelta": 0
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 18,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 18
+      }
     }
   ]
 }
@@ -181,7 +191,7 @@ abstract interface class Ruleset {
 
 - [ ] **Step 2: Write failing validation and scoring tests**
 
-Tests must reject fewer/more than five dice and faces outside 1–6, then load every fixture. Include explicit assertions:
+Tests must reject fewer/more than five dice and faces outside 1–6, then load every fixture. For each case, apply the evaluated score and bonus delta to `priorState`, assert the evaluation, and assert every `expectedTotals` field returned by `Ruleset.totals()`. Include explicit assertions:
 
 ```dart
 expect(evaluate([6, 6, 6, 6, 2], 'three-kind').score, 18);
@@ -218,7 +228,7 @@ final class ScoreEvaluation {
 
 - [ ] **Step 4: Expand fixtures across every category boundary**
 
-Include zero/miss cases, `62` versus `63` upper subtotal, exact full house, wrong straight, five-of-a-kind reuse in three/four-kind, and minimum/maximum scores. Run:
+Include zero/miss cases, `62` versus `63` upper subtotal, exact full house, wrong straight, five-of-a-kind reuse in three/four-kind, and minimum/maximum scores. Every case has `expectedTotals`; add completed-sheet cases for each ruleset in Task 5, including Classic repeated-bonus totals of 100 and 200. Run:
 
 ```bash
 cd mobile
@@ -469,9 +479,38 @@ Run: `cd mobile && flutter test test/game/presentation`
 
 Define felt `#123C2F`, ivory `#F4EAD2`, gold `#C99A2E`, readable error/success colors, spacing, radius, elevation, and typography in one `ThemeExtension`. Generate localization with `flutter gen-l10n`; category IDs map to ARB keys in presentation only.
 
+```dart
+@immutable
+final class TabletopTheme extends ThemeExtension<TabletopTheme> {
+  const TabletopTheme({required this.felt, required this.ivory,
+    required this.gold, required this.spacing, required this.radius});
+  final Color felt;
+  final Color ivory;
+  final Color gold;
+  final double spacing;
+  final BorderRadius radius;
+}
+```
+
+Add ARB keys for home/setup/actions, every category, active-player semantics, validation, and completion. Run `flutter gen-l10n`, then run only `game_screen_test.dart`; fix missing generated lookups before adding layout widgets.
+
 - [ ] **Step 4: Implement focused widgets**
 
 `GameScreen` composes `PlayerHeader`, `DiceTray`, and `Scorecard`. `Scorecard` renders rows from `Ruleset.categories`, uses one fixed category column plus `Expanded` player columns, and provides text/icon state in addition to color.
+
+Implement in this red/green order: `PlayerHeader` and its active semantic assertion; `DiceTray` and roll/hold assertions; `Scorecard` and all-columns-visible assertion; `ZeroScoreDialog` and confirm/cancel assertions; then `GameScreen` composition. After each widget, run `flutter test test/game/presentation/game_screen_test.dart` and keep scoring mutations inside `GameController`, never widget callbacks.
+
+```dart
+final class GameScreen extends ConsumerWidget {
+  const GameScreen({required this.gameId, super.key});
+  final String gameId;
+}
+
+final class Scorecard extends StatelessWidget {
+  const Scorecard({required this.state, required this.categories,
+    required this.onCategorySelected, super.key});
+}
+```
 
 - [ ] **Step 5: Add golden and large-text cases**
 

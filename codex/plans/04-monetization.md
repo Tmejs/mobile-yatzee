@@ -124,11 +124,19 @@ git commit -m "feat: add safe post-game advertising controls"
 
 **Files:**
 - Create: `backend/src/main/resources/db/migration/V4__purchase_entitlements.sql`
-- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/*`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/Entitlement.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/EntitlementRepository.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/EntitlementService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StorePurchaseVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleStorePurchaseVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GoogleStorePurchaseVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/EntitlementController.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/StoreNotificationController.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/EntitlementIntegrationTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationIntegrationTest.java`
+- Modify: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/AccountDeletionService.java`
+- Modify: `backend/src/test/java/pl/tmejs/mobileyatzee/profile/AccountDeletionIntegrationTest.java`
 - Modify: `api/openapi.yaml`
 - Modify: `mobile/pubspec.yaml`
 - Create: `mobile/lib/src/monetization/data/store_purchase_service.dart`
@@ -146,9 +154,11 @@ git commit -m "feat: add safe post-game advertising controls"
 
 - [ ] **Step 1: Write migration and failing ownership tests**
 
-Create `purchase_entitlement` with non-null player/store/product/normalized transaction, status, purchase/revocation timestamps, raw verification audit hash, and `unique(store, normalized_transaction_id)`.
+Create `purchase_entitlement` with nullable `player_id` for deletion anonymization, non-null store/product/normalized transaction, status, purchase/revocation timestamps, raw verification audit hash, and `unique(store, normalized_transaction_id)`. A check constraint requires `player_id` while status is active; deletion first moves the row to retained/anonymized state.
 
 Tests cover valid Apple/Google purchase, same-player repeat/restore returns same row, concurrent repeat creates one row, other-player replay returns `PURCHASE_OWNERSHIP_CONFLICT`, invalid signature/token, wrong product, refund, and revoked transaction. Responses never expose the owning player on conflict.
+
+Add deletion cases before changing production code: active and revoked entitlements must not block account deletion. `purchase_entitlement.player_id` becomes nullable on deletion; the transaction clears it and retains only store, product, normalized transaction ID, status, event times, and audit hash for refund/replay/audit obligations. The deleted player cannot be reconstructed from retained purchase rows, while the global transaction uniqueness constraint remains effective. Document the retention window in the privacy inventory and test that a later different player still receives `PURCHASE_OWNERSHIP_CONFLICT` without owner details.
 
 - [ ] **Step 2: Implement verifier boundary and production adapters**
 
