@@ -198,7 +198,7 @@ The conceptual relational model contains:
 - `refresh_session`: player ID, hashed refresh credential, device/session metadata, rotation state, expiry, and revocation timestamps.
 - `game_result`: client-generated UUID, player ID, ruleset ID and version, client completion time, server receipt time, snapshotted country and continent, submitted category scores, submitted bonuses, server-calculated values, final score, app version, acceptance status.
 - `weekly_player_result`: week, player, ruleset ID/version, region snapshots, number of accepted games in the current window, sum and average of the latest ten, best single score, and the timestamp at which the ranking value was achieved.
-- `purchase_entitlement`: player ID, store, product ID, original transaction/purchase identifier, verification status, entitlement type, purchase timestamp, and revocation state; player ID and the store transaction identifier are required.
+- `purchase_entitlement`: player ID, store, product ID, normalized original transaction/purchase identifier, verification status, entitlement type, purchase timestamp, and revocation state. Player ID and transaction identifier are required, and `(store, normalized transaction identifier)` is globally unique.
 
 Accepted game results are immutable during the life of an account. Corrections happen through explicit administrative records or a new ruleset version, never by silently rewriting history. Account deletion is the privacy exception: identifying result rows and leaderboard entries are deleted or irreversibly anonymized according to the published retention policy, while non-identifying aggregate operational metrics may remain. Country uses ISO 3166-1 alpha-2 codes. Continent is derived on the server from a versioned mapping and both region values are copied onto each result. Changing profile country affects only later submissions.
 
@@ -218,6 +218,8 @@ The first API provides:
 Guest play does not create a backend account. The first successful provider exchange creates the internal player profile. Linking a second provider requires an authenticated backend session plus fresh proof from that provider. Because both providers are available on both operating systems, a returning player signs in with an already-linked provider first and can then link the native provider of the new device.
 
 A provider identity already linked to another player is rejected rather than silently merging accounts. If a player accidentally created two internal profiles, version one keeps them separate: the app explains which provider belongs to which profile, lets the player sign out and recover the intended profile, and does not transfer results automatically. Account deletion revokes sessions and provider links, removes the profile from leaderboards, and deletes or irreversibly anonymizes retained game data according to the published retention policy.
+
+After verifying a store transaction, the backend normalizes its store-specific stable identifier. Repeating that transaction for the same player is an idempotent restoration and returns the existing entitlement. Presenting it under another player is rejected with a stable ownership-conflict error and never moves or duplicates Premium access. The response does not reveal the existing owner's identity.
 
 A result submission contains the game UUID, client completion timestamp, ruleset ID/version, every category score, bonuses, submitted final score, and app version. The server authenticates the profile, resolves the current profile region snapshot, checks that the ruleset version is supported, validates each category against the numeric values permitted by that ruleset, recalculates bonuses and the arithmetic final total, and rejects inconsistent or numerically impossible scorecards. On acceptance, it stores the immutable result and updates the weekly aggregate in one transaction.
 
@@ -278,7 +280,7 @@ When a ruleset version is retired from new rankings, an already-started local ga
 
 - The Java engine runs the identical conformance fixtures and rejects altered totals.
 - Unit tests cover weekly boundaries, exact averaging, rolling-window eviction, provisional status, all tie breakers, and country-change behavior.
-- Testcontainers integration tests cover PostgreSQL transactions, Flyway migrations, regional queries, pagination, UUID idempotency, concurrent duplicate submissions, result-owner mismatch rejection, provider-link conflicts, two-existing-profile conflicts, refresh-token rotation, account deletion, and purchase-verification idempotency.
+- Testcontainers integration tests cover PostgreSQL transactions, Flyway migrations, regional queries, pagination, UUID idempotency, concurrent duplicate submissions, result-owner mismatch rejection, provider-link conflicts, two-existing-profile conflicts, refresh-token rotation, account deletion, same-player purchase restoration, and cross-player store-transaction replay rejection.
 - Identity tests use controlled Apple/Google-compatible test issuers and keys to cover issuer, audience, signature, expiry, nonce, and stable-subject validation without calling production identity services.
 - OpenAPI compatibility tests protect the mobile contract and stable error shapes.
 

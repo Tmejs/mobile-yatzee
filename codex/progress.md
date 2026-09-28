@@ -14,5 +14,5 @@
 - Guest result claim and ownership rules specified.
 - Early-access and wider-release monetization stages specified.
 - Lifetime Premium, advertising cadence, consent, entitlements, and tests specified.
-- Independent review passed with no remaining Critical or Important findings.
+- Initial independent review findings are corrected; final re-review is pending after the purchase-replay ownership fix.
 - Written design awaits user review before implementation planning begins.

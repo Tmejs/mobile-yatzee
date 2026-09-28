@@ -36,9 +36,14 @@ The reviewer also identified Moderate ambiguity in the advertising counter and e
 
 The repeat review confirmed that all four Important findings and both Moderate ambiguities were resolved. No Critical or Important findings remain.
 
+## Final evidence review
+
+The reviewer found one additional Important backend edge case: the design required a store transaction identifier but did not make it globally unique, so one verified purchase could be replayed onto another player. The design now requires a unique normalized `(store, transaction identifier)`, treats restoration by the same player as idempotent, rejects cross-player reuse without revealing the owner, and includes an integration test for that conflict.
+
 ## Verification
 
 - Documentation content review: passed.
 - `git diff --check main...HEAD`: passed.
 - Placeholder and contradiction scan: passed.
+- Final independent re-review after the purchase-replay correction: pending.
 - Flutter, Java, database, and end-to-end tests: not applicable because this checkpoint changes documentation only and implementation has not started.
