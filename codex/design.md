@@ -1,7 +1,8 @@
 # Generał Dice Game — Product and Architecture Design
 
-**Date:** 2026-09-27
-**Status:** Approved conversational design, awaiting written-spec review
+**Created:** 2026-09-27
+**Last updated:** 2026-09-28
+**Status:** Approved conversational design, revised identity and monetization awaiting written-spec review
 
 ## 1. Purpose and success criteria
 
@@ -11,15 +12,15 @@ The product should succeed on three levels:
 
 - It feels as immediate and pleasant as a physical tabletop game: rolls are quick, the whole scorecard remains understandable, and players can hand the phone around without explanation.
 - It treats regional competition as a motivating layer rather than a condition for play. A player can always play locally, including offline, and completed solo games can be submitted later.
-- It demonstrates a credible mobile/backend integration: a Flutter client, a Java Spring service, durable score submissions, versioned game rules, and country, continent, and global leaderboards.
+- It demonstrates a credible mobile/backend integration: a Flutter client, a Java Spring service, federated Apple/Google identity, durable score submissions, versioned game rules, and country, continent, and global leaderboards.
 
-The first release excludes live online multiplayer, computer opponents, advertisements, cosmetic economies, achievements, friend systems, and fine-grained geographic rankings. These can be considered after the core game proves enjoyable and reliable.
+The first release excludes live online multiplayer, computer opponents, subscriptions, consumable currencies, loot boxes, achievements, friend systems, and fine-grained geographic rankings. Early access launches without advertising; restrained advertising and a lifetime Premium purchase can be enabled before wider promotion after retention is measured.
 
 ## 2. Product modes and main flow
 
 ### 2.1 Solo score challenge
 
-A solo game uses one selected ruleset. The player completes the full scorecard and sees the final total and a comparison with recent personal performance. A completed game is stored locally before any network action. If the player entered ranked play, the client submits the result immediately when online or queues it for retry.
+A solo game uses one selected ruleset. The player completes the full scorecard and sees the final total and a comparison with recent personal performance. A completed game is stored locally before any network action. If the player chose ranked play and has linked an Apple or Google identity, the client submits the result immediately when online or queues it for retry. If the player has not signed in, the completed result stays local and the app offers to protect the profile and submit it through one-tap platform sign-in.
 
 There is no daily play limit. Players may start and submit as many completed ranked games as they want. Weekly rankings use a rolling window of recent results to reward consistent play without rewarding volume alone.
 
@@ -34,6 +35,28 @@ Pass-and-play results are local and do not enter public solo leaderboards in ver
 Every turn starts with five dice. A player may roll up to three times. After each roll, individual dice can be held or released. The player may score after any roll, including the first. To finish a turn, the player selects one unused category. A qualifying roll receives the category's calculated score; a non-qualifying roll can be deliberately entered as zero. The app asks for a concise confirmation before recording a zero to prevent accidental sacrifices.
 
 The game autosaves after each roll, hold change, and category selection. An interrupted game resumes at the exact turn and roll state.
+
+### 2.4 Guest and account experience
+
+The app opens directly into a guest experience. Local solo and pass-and-play require no registration, email address, password, or backend connection. Sign-in is delayed until it provides visible value: public leaderboard submission, cloud recovery, synchronization, or purchase restoration across a linked profile.
+
+The primary action is **Continue with Apple** on iOS and **Continue with Google** on Android. Both providers can be linked to the same internal player so a profile can move between ecosystems. Provider availability follows platform capabilities and store requirements; offering Google on iOS always includes an equivalent Apple option. Nickname and country remain explicit game-profile settings and do not come from a provider account automatically.
+
+An offline completed ranked game remains queued locally. The app can request sign-in when connectivity returns and submits only after the identity exchange succeeds. Declining sign-in keeps the result and personal statistics local without repeatedly interrupting play.
+
+### 2.5 Monetization experience
+
+Early access ships without advertising so retention and game quality can be measured without monetization noise. Before wider promotion, the free version may enable restrained full-screen advertising under these rules:
+
+- the first five completed games are ad-free;
+- ads appear only after a completed game and never during a turn, score choice, handoff, or unfinished game;
+- a full-screen ad appears no more often than once per three completed games;
+- dismissing or failing to load an ad never blocks results, another game, or leaderboard submission;
+- advertising never grants extra rolls, score changes, ranking advantages, or other competitive benefits.
+
+A one-time, non-consumable **Premium lifetime** purchase launches at a target Polish price of 19.99 PLN, with final regional tiers configured in the stores. Premium removes advertising, unlocks additional dice/table/scorecard themes, and enables detailed personal statistics. All rulesets, local modes, and public leaderboards remain free. Purchases support store restoration. A validated Premium entitlement attaches to the internal linked profile when one exists.
+
+Optional rewarded theme previews and separate cosmetic theme packs are deferred until usage supports them. Version one has no monthly subscription because the game does not yet provide enough recurring content or service value to justify one.
 
 ## 3. Visual and interaction direction
 
@@ -134,7 +157,7 @@ The app is divided into four layers:
 
 1. **Domain:** pure Dart dice, scorecard, turn, game, player, and ruleset models plus deterministic scoring. It has no Flutter, persistence, or network dependencies.
 2. **Application:** game controllers/use cases that coordinate rolls, holds, scoring, turn rotation, autosave, and ranked submission state.
-3. **Data:** local game persistence, preferences, anonymous credentials, pending submission queue, and typed API client implementations behind interfaces.
+3. **Data:** local game persistence, preferences, secure backend credentials, federated sign-in adapters, purchase entitlement state, advertising consent/state, pending submission queue, and typed API client implementations behind interfaces.
 4. **Presentation:** Flutter screens, widgets, navigation, localization, animation, accessibility, and the Modern Tabletop theme.
 
 Random dice generation belongs to a replaceable `DiceRoller` interface. Version one uses an on-device cryptographically appropriate random source where Flutter/Dart supports it. Tests inject deterministic rolls. The server does not generate or authorize individual rolls in version one.
@@ -154,12 +177,13 @@ The backend is a Java Spring Boot modular monolith backed by PostgreSQL. A modul
 
 Its modules are:
 
-- **Identity:** anonymous device profile registration, token issuance and restoration, nickname, country selection, and future account-linking seams.
+- **Identity:** Apple/Google identity exchange and verification, provider linking, backend token issuance and refresh, nickname, country selection, account recovery, and account deletion.
 - **Games:** idempotent result submission, ruleset-version validation, score-range and arithmetic validation, and immutable accepted results.
 - **Leaderboards:** weekly qualification, rolling-last-ten aggregates, tie breaking, regional filtering, and historical weekly views.
 - **Statistics:** personal recent games and locally useful summary data exposed through the API.
+- **Entitlements:** server-validated App Store and Google Play purchases, lifetime Premium state, restoration, and entitlement lookup.
 
-Spring Security protects profile and submission endpoints with a backend-issued anonymous bearer token. A later release may link Apple or Google identity to the same profile without changing game ownership or submission identifiers.
+Flutter obtains a short-lived Apple or Google identity credential and sends it to the backend over TLS. Spring verifies the credential signature, issuer, audience, expiry, and nonce where applicable, then resolves the stable provider subject. Email address is optional profile data and is never the account key. The backend creates or links the internal player and returns its own short-lived access token plus rotated refresh credentials. Spring Security protects profile, entitlement, submission, and leaderboard-personalization endpoints with those backend credentials; provider tokens are not used as ordinary API session tokens.
 
 Flyway owns database migrations. OpenAPI defines the client/server contract and supports generating or validating the Flutter API client. Testcontainers supplies real PostgreSQL integration tests. Structured application logs, request correlation identifiers, health endpoints, and basic submission/leaderboard metrics are included from the first deployable version. Hosting provider selection is deferred to implementation/deployment planning and does not change these boundaries.
 
@@ -167,9 +191,12 @@ Flyway owns database migrations. OpenAPI defines the client/server contract and 
 
 The conceptual relational model contains:
 
-- `player_profile`: ID, token credential metadata, nickname, selected country code, derived continent code, locale preferences, created/updated timestamps.
+- `player_profile`: ID, nickname, selected country code, derived continent code, locale preferences, created/updated timestamps.
+- `external_identity`: player ID, provider (`APPLE` or `GOOGLE`), stable provider subject, provider metadata, linked timestamp; provider and subject are unique together.
+- `refresh_session`: player ID, hashed refresh credential, device/session metadata, rotation state, expiry, and revocation timestamps.
 - `game_result`: client-generated UUID, player ID, ruleset ID and version, client completion time, server receipt time, snapshotted country and continent, submitted category scores, submitted bonuses, server-calculated values, final score, app version, acceptance status.
 - `weekly_player_result`: week, player, ruleset ID/version, region snapshots, number of accepted games in the current window, sum and average of the latest ten, best single score, and the timestamp at which the ranking value was achieved.
+- `purchase_entitlement`: player ID where linked, store, product ID, original transaction/purchase identifier, verification status, entitlement type, purchase timestamp, and revocation state.
 
 Accepted game results are immutable. Corrections happen through explicit administrative records or a new ruleset version, never by silently rewriting history. Country uses ISO 3166-1 alpha-2 codes. Continent is derived on the server from a versioned mapping and both region values are copied onto each result. Changing profile country affects only later submissions.
 
@@ -179,11 +206,14 @@ The raw result schema preserves enough stable facts—ruleset version, regional 
 
 The first API provides:
 
-- anonymous profile registration and credential restoration;
+- Apple/Google credential exchange, provider linking, backend token refresh, sign-out/session revocation, and account deletion;
 - nickname and selected-country update;
 - idempotent ranked solo result submission;
 - personal result history and summary statistics;
-- paginated current and previous weekly leaderboards for country, continent, and global scope, filtered by ruleset version.
+- paginated current and previous weekly leaderboards for country, continent, and global scope, filtered by ruleset version;
+- store purchase verification, Premium entitlement lookup, and restoration support.
+
+Guest play does not create a backend account. The first successful provider exchange creates the internal player profile. Linking a second provider requires an authenticated backend session plus fresh proof from that provider; a provider identity already linked to another player is rejected rather than silently merging accounts. Account deletion revokes sessions and provider links, removes the profile from leaderboards, and deletes or irreversibly anonymizes retained game data according to the published retention policy.
 
 A result submission contains the game UUID, client completion timestamp, ruleset ID/version, every category score, bonuses, submitted final score, and app version. The server authenticates the profile, resolves the current profile region snapshot, checks that the ruleset version is supported, validates each category against the numeric values permitted by that ruleset, recalculates bonuses and the arithmetic final total, and rejects inconsistent or numerically impossible scorecards. On acceptance, it stores the immutable result and updates the weekly aggregate in one transaction.
 
@@ -221,9 +251,9 @@ Dates, numbers, decimal separators, and week labels use the current locale while
 
 ## 11. Offline behavior and failure handling
 
-Local solo and pass-and-play never depend on backend availability. Each active game is persisted after every meaningful action. A completed ranked result is finalized locally before submission and remains visible while pending.
+Local solo and pass-and-play never depend on backend availability or sign-in. Each active game is persisted after every meaningful action. A completed ranked result is finalized locally before submission and remains visible while pending.
 
-The submission queue retries transient failures with bounded exponential backoff and connectivity-triggered retry. It always reuses the original game UUID. Authentication expiry pauses the queue until anonymous credentials are restored. Permanent validation failures remain attached to the local result with a translated explanation and a diagnostic code; the client does not silently discard them.
+The submission queue retries transient failures with bounded exponential backoff and connectivity-triggered retry. It always reuses the original game UUID. Missing identity leaves the result queued locally; authentication expiry pauses the queue until the backend session refreshes or the player signs in again. Permanent validation failures remain attached to the local result with a translated explanation and a diagnostic code; the client does not silently discard them.
 
 The API uses stable error codes for invalid scorecards, unsupported ruleset versions, conflicting UUID reuse, expired credentials, invalid nickname or country, rate limiting, and temporary service failure. A leaderboard read failure shows cached data with its update time when available and otherwise an unobtrusive retry state. It never blocks starting or continuing a local game.
 
@@ -235,37 +265,40 @@ When a ruleset version is retired from new rankings, an already-started local ga
 
 - Unit tests cover every ruleset category, edge case, bonus threshold, zero sacrifice, turn transition, and final total.
 - The Dart engine runs all shared JSON conformance fixtures.
-- Application tests cover three-roll limits, hold behavior, player rotation, autosave/resume, and pending submission retries.
-- Widget tests cover one through four players, thirteen- and fifteen-category layouts, Polish and English strings, large text, and semantic labels.
+- Application tests cover three-roll limits, hold behavior, player rotation, autosave/resume, pending submission retries, backend-session refresh, and guest-to-linked-profile transitions.
+- Widget tests cover one through four players, thirteen- and fifteen-category layouts, Polish and English strings, sign-in prompts, large text, and semantic labels.
+- Monetization tests cover the first-five-games exemption, one-per-three-games frequency cap, Premium ad removal, failed-ad fallthrough, entitlement restoration, and the absence of competitive rewards.
 - Golden image tests protect the Modern Tabletop scorecard and dice states at representative phone sizes.
 
 ### Backend
 
 - The Java engine runs the identical conformance fixtures and rejects altered totals.
 - Unit tests cover weekly boundaries, exact averaging, rolling-window eviction, provisional status, all tie breakers, and country-change behavior.
-- Testcontainers integration tests cover PostgreSQL transactions, Flyway migrations, regional queries, pagination, UUID idempotency, and concurrent duplicate submissions.
+- Testcontainers integration tests cover PostgreSQL transactions, Flyway migrations, regional queries, pagination, UUID idempotency, concurrent duplicate submissions, provider-link conflicts, refresh-token rotation, account deletion, and purchase-verification idempotency.
+- Identity tests use controlled Apple/Google-compatible test issuers and keys to cover issuer, audience, signature, expiry, nonce, and stable-subject validation without calling production identity services.
 - OpenAPI compatibility tests protect the mobile contract and stable error shapes.
 
 ### End to end
 
-A local test environment runs Flutter against Spring Boot and PostgreSQL. Its critical scenarios are anonymous registration, profile country selection, an accepted ranked submission, an identical retry, a conflicting UUID retry, provisional progress through ten games, and the same eligible result appearing correctly in country, continent, and global views.
+A local test environment runs Flutter against Spring Boot and PostgreSQL with controlled identity and store-verification fakes. Its critical scenarios are guest play without a backend account, provider sign-in and profile creation, linking a second provider, profile country selection, an accepted ranked submission, an identical retry, a conflicting UUID retry, provisional progress through ten games, Premium purchase restoration, ad suppression for Premium, and the same eligible result appearing correctly in country, continent, and global views.
 
 ## 13. Security, privacy, and operational limits
 
-The service stores only the profile information required for play: anonymous identity, nickname, country, locale preferences, and game results. No GPS location is requested. Nicknames are length-limited, normalized, and moderated with a practical release-appropriate policy. API inputs have explicit size and range limits, and submission and registration endpoints are rate-limited.
+The service stores only the profile information required for play: stable provider subject, nickname, country, locale preferences, purchase entitlement, and game results. Provider email and name are not required and are discarded unless a later reviewed feature needs them. No GPS location is requested. Nicknames are length-limited, normalized, and moderated with a practical release-appropriate policy. API inputs have explicit size and range limits, and identity, purchase, and submission endpoints are rate-limited.
 
-Anonymous credentials are stored using the platform's secure storage. Transport uses TLS. Logs avoid bearer tokens and full request payloads. Database backups and restore checks are part of deployment readiness.
+Backend refresh credentials are stored using platform secure storage. Provider and backend tokens never enter ordinary logs. Transport uses TLS, purchase verification is performed server-side against the relevant store, and advertising SDKs initialize only after the required consent state is established. The privacy settings let eligible users revisit advertising consent. Database backups and restore checks are part of deployment readiness.
 
 The initial leaderboard design is suitable for launch and portfolio demonstration, but client-generated dice limit competitive integrity. Server-authorized rolls, signed action logs, anomaly detection, and appeal/admin tooling are later security increments if usage makes them worthwhile.
 
 ## 14. Delivery boundaries and future evolution
 
-Version one delivers the complete local game, the three versioned rulesets, Polish and English, anonymous profiles, reliable ranked solo submissions, personal statistics, and weekly country/continent/global leaderboards.
+Version one delivers the complete local game, the three versioned rulesets, Polish and English, guest local play, Apple/Google-linked profiles for ranked play and recovery, reliable ranked solo submissions, personal statistics, weekly country/continent/global leaderboards, and the technical seams for the staged advertising/Premium model. Early access keeps monetization disabled until retention has been measured; the wider public release can enable the approved post-game ads and lifetime Premium purchase without redesigning the app.
 
 Likely later increments are:
 
 - server-authorized dice or compact replay verification for stronger ranked integrity;
-- linked Apple and Google sign-in while retaining anonymous history;
+- passkeys or other identity providers if they materially improve recovery;
+- a subscription only if recurring tournaments, seasonal content, or another sustained service creates continuing value;
 - more translations and market-specific rulesets;
 - friends and private groups;
 - analytics/ETL and a specialized leaderboard read model if PostgreSQL summaries become insufficient;
