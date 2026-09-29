@@ -34,9 +34,15 @@
 
 **Files:**
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/config/PublicAppConfigController.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/config/AppMonetizationProperties.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/config/PublicAppConfig.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/config/PublicAppConfigTest.java`
 - Modify: `api/openapi.yaml`
 - Modify: `mobile/pubspec.yaml`
+- Modify: `mobile/android/app/src/main/AndroidManifest.xml`
+- Modify: `mobile/ios/Runner/Info.plist`
+- Create: `mobile/android/monetization.properties.example`
+- Create: `mobile/ios/Config/Monetization.xcconfig.example`
 - Create: `mobile/lib/src/monetization/domain/monetization_config.dart`
 - Create: `mobile/lib/src/monetization/domain/ad_eligibility.dart`
 - Create: `mobile/lib/src/monetization/data/ad_counter_repository.dart`
@@ -83,15 +89,58 @@ Assert false for counts 0–7, true at 8 when no prior ad, false at 9/10 after a
 
 Values come from validated server configuration; absence resolves to false. Regenerate the mobile API and verify no diff on a second generation.
 
+```java
+@ConfigurationProperties("app.monetization")
+public record AppMonetizationProperties(
+    boolean enabled, boolean adsEnabled, boolean premiumPurchaseEnabled,
+    String premiumProductId) {}
+
+public record PublicAppConfig(
+    boolean monetizationEnabled, boolean adsEnabled,
+    boolean premiumPurchaseEnabled, String premiumProductId) {}
+```
+
+First make `PublicAppConfigTest` fail for absent properties and the three independent enable flags. Implement the records and controller, run `./mvnw -Dtest=PublicAppConfigTest test`, add the OpenAPI path/schema, regenerate twice, and run the contract test.
+
 - [ ] **Step 3: Add SDK and write failing fallthrough tests**
 
 Run: `cd mobile && flutter pub add google_mobile_ads:9.1.0`
+
+Add `com.google.android.gms.ads.APPLICATION_ID` metadata to `AndroidManifest.xml` and `GADApplicationIdentifier` to `Info.plist`, sourced from the example build configuration. Development/test defaults use Google's official test application IDs; release builds require injected real IDs and fail configuration validation when absent. No secret or production identifier is committed.
+
+```xml
+<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+    android:value="${ADMOB_APP_ID}" />
+```
+
+```xml
+<key>GADApplicationIdentifier</key>
+<string>$(ADMOB_APP_ID)</string>
+```
+
+The Android example defines `ADMOB_APP_ID`, Gradle supplies it to the manifest value map, and the iOS example defines the same xcconfig key. Keep ad-unit IDs separate from application IDs.
 
 ```dart
 abstract interface class AdService {
   Future<ConsentState> requestConsent();
   Future<AdShowResult> showInterstitial();
   Future<void> openPrivacyOptions();
+}
+
+enum ConsentState { notRequired, granted, denied, unavailable }
+enum AdShowResult { shown, unavailable, loadFailed, showFailed, timedOut }
+
+abstract interface class AdCounterRepository {
+  Future<AdCounter> read();
+  Future<AdCounter> recordSavedSoloGame();
+  Future<void> recordAdShown({required int completedSoloGames});
+}
+
+final class AdCounter {
+  const AdCounter({required this.completedSoloGames,
+    required this.lastAdAtCompletedCount});
+  final int completedSoloGames;
+  final int lastAdAtCompletedCount;
 }
 ```
 
@@ -103,9 +152,13 @@ Initialize the ads SDK only when config and consent permit. Use official test ad
 
 Use a five-second watchdog around SDK show callbacks. On timeout, dispose the ad and continue without showing another for that same completion event.
 
+Implement in this order, running `flutter test test/monetization/post_game_ad_controller_test.dart` after each change: Drift-backed `AdCounterRepository`; fake-backed `PostGameAdController`; `GoogleMobileAdService.requestConsent()`; interstitial load/show callbacks; watchdog cleanup. Keep SDK types inside `google_mobile_ad_service.dart` so controller tests need no platform channel.
+
 - [ ] **Step 5: Add privacy settings and UI placement**
 
 Privacy Settings exposes consent options when required. The game completion flow stores result first, navigates to result screen, then calls the controller; no banner/native/rewarded ad is added. Pass-and-play never calls the controller.
+
+Add the settings widget test first, then the solo-completion ordering test, then the pass-and-play non-call test. Implement only enough presentation wiring to make each test green before proceeding.
 
 - [ ] **Step 6: Run gates and commit checkpoint 18**
 
@@ -113,6 +166,12 @@ Privacy Settings exposes consent options when required. The game completion flow
 cd mobile
 flutter test test/monetization
 ./tool/verify.sh
+flutter build apk --debug --dart-define=MONETIZATION_ENABLED=false
+flutter build ios --simulator --no-codesign --dart-define=MONETIZATION_ENABLED=false
+flutter build apk --debug --dart-define=MONETIZATION_ENABLED=true \
+  --dart-define=ADMOB_USE_TEST_IDS=true
+flutter build ios --simulator --no-codesign \
+  --dart-define=MONETIZATION_ENABLED=true --dart-define=ADMOB_USE_TEST_IDS=true
 cd ../backend
 ./tool/verify.sh
 cd ..
@@ -247,7 +306,7 @@ Turn ads off between eligibility and show: no ad. Turn purchase off before store
 - [ ] **Step 4: Run complete repository gate**
 
 ```bash
-docker compose up -d postgres
+POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
 cd backend
 ./tool/verify.sh
 cd ../mobile

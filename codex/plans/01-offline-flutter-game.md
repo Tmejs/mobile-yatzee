@@ -132,7 +132,7 @@ Follow the repository checkpoint gate, including independent review and `--no-ff
 - Create: `mobile/lib/src/game/rules/polish_general_ruleset.dart`
 - Create: `mobile/test/support/conformance_fixture.dart`
 - Create: `mobile/test/game/rules/polish_general_ruleset_test.dart`
-- Modify: `mobile/pubspec.yaml` to include `../rulesets/*.json` test assets or load fixtures by repository-relative path in tests.
+- Modify: `mobile/pubspec.yaml` for test dependencies; fixtures stay outside package assets and tests resolve `Directory.current.parent.path/rulesets/<file>.json` when invoked from `mobile/`.
 
 **Interfaces:**
 - Consumes: none.
@@ -172,6 +172,26 @@ Define exact signatures:
 
 ```dart
 typedef CategoryId = String;
+
+final class CategoryDefinition {
+  const CategoryDefinition({required this.id, required this.labelKey,
+    required this.section, required this.order});
+  final CategoryId id;
+  final String labelKey;
+  final String section;
+  final int order;
+}
+
+final class ScoreTotals {
+  const ScoreTotals({required this.upperSubtotal, required this.upperBonus,
+    required this.lowerSubtotal,
+    required this.repeatedFiveOfAKindBonusTotal, required this.finalTotal});
+  final int upperSubtotal;
+  final int upperBonus;
+  final int lowerSubtotal;
+  final int repeatedFiveOfAKindBonusTotal;
+  final int finalTotal;
+}
 
 final class DiceRoll {
   DiceRoll(List<int> values);

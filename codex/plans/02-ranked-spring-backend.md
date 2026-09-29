@@ -101,6 +101,14 @@ public interface ScorecardValidator {
         Map<String, Integer> submittedBonuses,
         int submittedTotal);
 }
+
+public record RulesetKey(String id, int version) {}
+
+public record ValidatedScorecard(
+    RulesetKey ruleset,
+    Map<String, Integer> categoryScores,
+    Map<String, Integer> bonuses,
+    int finalScore) {}
 ```
 
 The validator checks exact category set, each ruleset's possible numeric values, bonus threshold/arithmetic, and final sum. Polish and Scandinavian upper bonuses are exact; classic upper bonus is exact, while repeated-Yahtzee bonus must be a multiple of 100 from 0 through 1200 and requires the Yahtzee category to contain 50. It must not accept a claim that category values prove actual rolls.
@@ -122,7 +130,7 @@ set -euo pipefail
 Run:
 
 ```bash
-docker compose up -d postgres
+POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
 cd backend
 chmod +x tool/verify.sh
 ./tool/verify.sh
@@ -145,7 +153,10 @@ git commit -m "build: scaffold ranked Spring backend"
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/ExternalIdentityVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/IdentityService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/RefreshSessionService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/ExternalIdentityRepository.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/identity/RefreshSessionRepository.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/ProfileService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/ProfileRepository.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/RegionCatalog.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/security/AccessTokenService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/security/SecurityConfiguration.java`
@@ -173,6 +184,22 @@ public interface ExternalIdentityVerifier {
 }
 
 public record VerifiedIdentity(Provider provider, String subject) {}
+
+public enum Provider { APPLE, GOOGLE }
+public record PlayerId(UUID value) {}
+public record SessionId(UUID value) {}
+public record SessionFamilyId(UUID value) {}
+public record RefreshSession(SessionId id, PlayerId playerId,
+    SessionFamilyId familyId, Instant expiresAt, boolean consumed,
+    boolean revoked) {}
+
+public interface RefreshSessionRepository {
+    RefreshSession create(PlayerId playerId, SessionFamilyId familyId,
+                          byte[] refreshHash, Instant expiresAt);
+    Optional<RefreshSession> lockByHash(byte[] refreshHash);
+    void consumeAndRotate(SessionId current, byte[] nextHash, Instant nextExpiry);
+    void revokeFamily(SessionFamilyId familyId);
+}
 ```
 
 Controlled test JWK issuers cover valid Apple/Google tokens plus bad signature, issuer, audience, expiry, nonce, blank subject, and replayed authorization response. Assert failure creates no profile, identity, or session.
@@ -182,6 +209,8 @@ Controlled test JWK issuers cover valid Apple/Google tokens plus bad signature, 
 Access JWT lifetime is 15 minutes. Refresh token lifetime is 30 days, generated with 256 bits of secure randomness, stored as SHA-256 hash, and rotated on every use. Reuse of a consumed refresh token revokes that session family.
 
 Add `RefreshSessionService.revokeCurrent(PlayerId, SessionId)` and `DELETE /v1/auth/sessions/current`. Revocation is idempotent, invalidates the complete refresh-token family, and makes every later refresh return `SESSION_REVOKED`. Write the failing revoked-family test before adding the controller method, then run only `RefreshRotationIntegrationTest` until green.
+
+Implement the session flow as short red/green slices: make valid exchange fail, implement profile/identity lookup plus session creation, and run `IdentityExchangeIntegrationTest`; make single refresh fail, implement row-locked rotation, and run `RefreshRotationIntegrationTest`; add the concurrent refresh case and make it green; add reuse-family revocation and make it green; add current-session deletion and make it green. Only then add JWT serialization and the controller response mapping. Run the two focused test classes after every slice.
 
 Return:
 
@@ -199,6 +228,8 @@ Return:
 `POST /v1/auth/link` requires an authenticated backend session plus fresh provider credential. Existing same-player link is idempotent; a link owned by another player returns `IDENTITY_OWNERSHIP_CONFLICT` without owner details.
 
 `PATCH /v1/profile` accepts normalized nickname and country. Backend derives continent from the versioned mapping. Reject blank/oversized nickname, unsupported country, and control characters with stable codes.
+
+Write and run one failing case at a time in `ProfileIntegrationTest`: create profile, update country, derive continent, reject unknown country, normalize nickname, reject invalid nickname. Then do the same in `IdentityExchangeIntegrationTest` for idempotent same-player link and cross-player conflict. Add only the repository/service/controller method required by the current case before rerunning it.
 
 - [ ] **Step 5: Verify rotation, concurrency, and region behavior**
 
@@ -221,6 +252,7 @@ git commit -m "feat: add federated identity and player profiles"
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameResultRepository.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameSubmissionService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameAcceptedListener.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/games/GameAcceptedListenerConfiguration.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/RulesetAvailability.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/rules/RulesetAvailabilityRegistry.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/GameResultController.java`
@@ -263,11 +295,11 @@ public interface GameAcceptedListener {
 }
 ```
 
-Task 12 registers one `@Primary` no-op listener in production and a counting spy in the concurrency test. `GameSubmissionService.submit()` canonicalizes sorted category and bonus keys, inserts the result, and invokes the listener after the insert in the same Spring transaction; a listener failure rolls back both. On duplicate UUID: same player plus same hash returns original `200` without invoking the listener; different content or different player returns `GAME_ID_CONFLICT`.
+Task 12 registers a no-op through `@Bean @ConditionalOnMissingBean(GameAcceptedListener.class)` in `GameAcceptedListenerConfiguration`; the concurrency test supplies a counting spy bean. `GameSubmissionService.submit()` canonicalizes sorted category and bonus keys, inserts the result, and invokes the listener after the insert in the same Spring transaction; a listener failure rolls back both. On duplicate UUID: same player plus same hash returns original `200` without invoking the listener; different content or different player returns `GAME_ID_CONFLICT`.
 
 - [ ] **Step 4: Test concurrent duplicates with PostgreSQL**
 
-Start 20 parallel identical requests and assert one row, identical responses, and one summary-refresh invocation. Repeat with two payloads sharing a UUID and assert one accepted payload and deterministic conflicts for the other.
+Start 20 parallel identical requests and assert one row, identical responses, and one accepted-listener invocation. Repeat with two payloads sharing a UUID and assert one accepted payload and deterministic conflicts for the other.
 
 - [ ] **Step 5: Run gate and commit checkpoint 12**
 
@@ -310,7 +342,7 @@ Use an injected `Clock`. Submit at Sunday `23:59:59.999Z` and Monday `00:00:00Z`
 
 Key summaries by `(week_start, ruleset_id, ruleset_version, scope, region_code, player_id)`. Store game count, last-ten sum, average decimal, best score, achieved-at, and refreshed-at. Refresh GLOBAL plus the accepted result's COUNTRY and CONTINENT rows inside the game transaction using deterministic SQL window queries.
 
-`LeaderboardRefreshService implements GameAcceptedListener`; replacing Task 12's no-op bean requires no change to `GameSubmissionService`. Add a transaction rollback test proving a refresh failure leaves neither result nor summary row committed.
+`LeaderboardRefreshService implements GameAcceptedListener`; Spring then omits Task 12's conditional no-op bean without any change to `GameSubmissionService`. Add a context test asserting exactly one listener bean and a transaction rollback test proving a refresh failure leaves neither result nor summary row committed.
 
 - [ ] **Step 4: Implement keyset pagination**
 
@@ -344,6 +376,7 @@ git commit -m "feat: add weekly regional leaderboards"
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/security/RateLimitIntegrationTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/profile/NicknamePolicyTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/operations/BackupRestoreReadinessTest.java`
+- Create: `backend/tool/backup-restore-readiness.sh`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/BackendEndToEndTest.java`
 - Modify: `backend/src/main/resources/application.yml`
 - Modify: `compose.yaml`
@@ -377,6 +410,8 @@ Return no translated prose from business errors. Add request correlation ID gene
 
 First add failing tests, then enforce explicit maximum lengths/counts in OpenAPI and Bean Validation: provider credential 16 KiB, nickname 24 Unicode code points, app version 64 characters, cursor 2 KiB, at most 20 category/bonus entries, and request body 64 KiB. `NicknamePolicy` applies normalized allow/block lists and returns `NICKNAME_NOT_ALLOWED`. `ApiRateLimitFilter` uses per-IP limits for public auth/leaderboard routes and per-player limits for authenticated writes, returns `429 RATE_LIMITED` with `Retry-After`, and has deterministic injected-clock tests. Configuration keeps thresholds externalized and production defaults nonzero.
 
+Use separate red/green loops in this order: error envelope in `OpenApiContractTest`; request ID propagation; Bean Validation bounds; `NicknamePolicyTest`; `RateLimitIntegrationTest`; structured-log redaction test; Actuator readiness; metrics assertions. Run the single named test after each minimal implementation, then run `./tool/verify.sh`. Do not add the next concern while the current focused test is red.
+
 - [ ] **Step 3: Implement account deletion transaction**
 
 Require recent provider reauthentication. Revoke sessions and identities, remove active/historical leaderboard rows, and delete or irreversibly anonymize identifying result/profile data. Test retries are idempotent and a deleted access/refresh token cannot recover the account.
@@ -390,7 +425,7 @@ Add `backend/tool/backup-restore-readiness.sh`: create a dump with `pg_dump`, re
 - [ ] **Step 5: Run complete backend alpha gate**
 
 ```bash
-docker compose up -d postgres
+POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
 cd backend && ./tool/verify.sh
 ./mvnw spring-boot:run >/tmp/mobile-yatzee-backend.log 2>&1 &
 BACKEND_PROCESS_ID=$!
@@ -401,7 +436,7 @@ for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
 done
 curl --fail http://localhost:8080/actuator/health
 kill "$BACKEND_PROCESS_ID"
-./backend/tool/backup-restore-readiness.sh
+POSTGRES_PASSWORD=local-development-only ./backend/tool/backup-restore-readiness.sh
 docker compose down
 ```
 

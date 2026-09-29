@@ -159,6 +159,47 @@ abstract interface class RankedRepository {
   Future<List<RulesetAvailability>> rulesets();
 }
 
+final class RulesetKey {
+  const RulesetKey(this.id, this.version);
+  final String id;
+  final int version;
+}
+
+final class AcceptedGame {
+  const AcceptedGame({required this.gameId, required this.receivedAt,
+    required this.weekStart});
+  final String gameId;
+  final DateTime receivedAt;
+  final DateTime weekStart;
+}
+
+enum LeaderboardScope { country, continent, global }
+
+final class LeaderboardEntry {
+  const LeaderboardEntry({required this.rank, required this.displayName,
+    required this.gameCount, required this.lastTenAverage});
+  final int rank;
+  final String displayName;
+  final int gameCount;
+  final double lastTenAverage;
+}
+
+final class LeaderboardQuery {
+  const LeaderboardQuery({required this.ruleset, required this.weekStart,
+    required this.scope, this.region, this.cursor});
+  final RulesetKey ruleset;
+  final DateTime weekStart;
+  final LeaderboardScope scope;
+  final String? region;
+  final String? cursor;
+}
+
+final class LeaderboardPage {
+  const LeaderboardPage({required this.entries, this.nextCursor});
+  final List<LeaderboardEntry> entries;
+  final String? nextCursor;
+}
+
 final class RulesetAvailability {
   const RulesetAvailability({required this.key, required this.playable,
     required this.rankedSubmissionEnabled, required this.historicalReadable});
@@ -263,7 +304,7 @@ Require fresh provider flow, explain ranked-history removal and local-history re
 Start PostgreSQL/backend with controlled provider issuer, run Flutter integration flow for sign-in, country, ten submissions, provisional/eligible boards, duplicate retry, cross-provider link, recovery, and deletion. Use network fault injection for one queued retry.
 
 ```bash
-docker compose up -d postgres
+POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
 cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=e2e
 ```
 
@@ -286,7 +327,17 @@ flutter build appbundle --debug --dart-define=MONETIZATION_ENABLED=false
 flutter build ios --simulator --no-codesign --dart-define=MONETIZATION_ENABLED=false
 ```
 
-On configured local devices, also run `flutter test integration_test/full_ranked_flow_test.dart -d <android-device-id>` and `-d <ios-simulator-id>` and record the exact device/OS results. Provider SDK behavior that controlled issuers cannot exercise is recorded as adapter-contract coverage; do not claim store-provider end-to-end coverage until sandbox Apple and Google credentials are tested.
+On configured local devices, list identifiers and read the selected values into named variables before running both targets:
+
+```bash
+flutter devices --machine
+read -r -p "Android device ID: " ANDROID_DEVICE_ID
+read -r -p "iOS simulator ID: " IOS_SIMULATOR_ID
+flutter test integration_test/full_ranked_flow_test.dart -d "$ANDROID_DEVICE_ID"
+flutter test integration_test/full_ranked_flow_test.dart -d "$IOS_SIMULATOR_ID"
+```
+
+Record the resolved IDs and OS versions in the checkpoint review. Provider SDK behavior that controlled issuers cannot exercise is recorded as adapter-contract coverage; do not claim store-provider end-to-end coverage until sandbox Apple and Google credentials are tested.
 
 Record all outputs and limitations in `codex/reviews/checkpoint-17-early-access.md`. Update README with verified local/ranked behavior and clearly label deployment/store publication as not yet performed.
 
