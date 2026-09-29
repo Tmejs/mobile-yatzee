@@ -45,6 +45,9 @@
 - Modify: `mobile/ios/Flutter/Debug.xcconfig`
 - Modify: `mobile/ios/Flutter/Release.xcconfig`
 - Create: `mobile/ios/Config/Monetization.xcconfig`
+- Modify: `mobile/ios/Runner.xcodeproj/project.pbxproj`
+- Create: `mobile/tool/validate_monetization_release_config.sh`
+- Create: `mobile/test/monetization/native_release_config_test.dart`
 - Create: `mobile/android/monetization.properties.example`
 - Create: `mobile/ios/Config/Monetization.xcconfig.example`
 - Create: `mobile/lib/src/monetization/domain/monetization_config.dart`
@@ -128,7 +131,9 @@ Add `com.google.android.gms.ads.APPLICATION_ID` metadata to `AndroidManifest.xml
 <string>$(ADMOB_APP_ID)</string>
 ```
 
-`mobile/android/app/build.gradle.kts` loads `ADMOB_APP_ID` from an optional local `monetization.properties`, falling back to Google's official Android test app ID for debug/local builds, and sets `manifestPlaceholders["ADMOB_APP_ID"]`. `mobile/ios/Config/Monetization.xcconfig` defines Google's official iOS test app ID; both Flutter xcconfig files `#include` it after `Generated.xcconfig`, and a local/release override may replace `ADMOB_APP_ID`. Keep ad-unit IDs separate from application IDs. Add build-script tests or configuration assertions that resolve both native values before the first app-start test.
+`mobile/android/app/build.gradle.kts` loads `ADMOB_APP_ID` from an optional local `monetization.properties`, falling back to Google's official Android test app ID for debug/local builds, and sets `manifestPlaceholders["ADMOB_APP_ID"]`. `mobile/ios/Config/Monetization.xcconfig` defines Google's official iOS test app ID; both Flutter xcconfig files `#include` it after `Generated.xcconfig`, and a local/release override may replace `ADMOB_APP_ID`. Keep ad-unit IDs separate from application IDs. Add configuration assertions that resolve both native values before the first app-start test.
+
+`validate_monetization_release_config.sh` rejects a missing ID and both official test app IDs. Gradle invokes it for Release when `MONETIZATION_RELEASE_ENABLED=true`; an Xcode Run Script phase invokes it when the matching build setting is `YES`. `native_release_config_test.dart` proves missing/test IDs fail and a non-test fixture passes without committing a production ID. Monetization-disabled release candidates may use test IDs, but an enabled release cannot compile until a real app ID is injected.
 
 ```dart
 abstract interface class AdService {
@@ -196,12 +201,23 @@ git commit -m "feat: add safe post-game advertising controls"
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/Entitlement.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/EntitlementRepository.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/EntitlementService.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/Store.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/PurchaseState.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/VerifiedPurchase.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StorePurchaseVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleStorePurchaseVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GoogleStorePurchaseVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleTransactionClient.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GooglePlayPurchaseClient.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleTransaction.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GoogleProductPurchase.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationRequest.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleNotificationRequest.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GooglePushRequest.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/VerifiedStoreEvent.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleStoreNotificationVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GoogleStoreNotificationVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/EntitlementController.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/StoreNotificationController.java`
@@ -273,8 +289,19 @@ public interface GooglePlayPurchaseClient {
         String packageName, String productId, String purchaseToken);
 }
 
-public interface StoreNotificationVerifier {
-    VerifiedStoreEvent verify(Store store, String signedPayload);
+public sealed interface StoreNotificationRequest
+    permits AppleNotificationRequest, GooglePushRequest {}
+
+public record AppleNotificationRequest(String signedPayload)
+    implements StoreNotificationRequest {}
+
+public record GooglePushRequest(
+    String authorizationHeader,
+    String expectedAudience,
+    String envelopeJson) implements StoreNotificationRequest {}
+
+public interface StoreNotificationVerifier<R extends StoreNotificationRequest> {
+    VerifiedStoreEvent verify(R request);
 }
 ```
 
@@ -290,13 +317,46 @@ Implement with separate red/green slices:
 
 Verify App Store Server Notification V2 and Google RTDN authenticity, store notification IDs uniquely, and apply events only when their store event time/version is newer than the entitlement state. Duplicate or out-of-order notifications return success without rolling state backward.
 
-First make `AppleNotificationVerifierTest` green case-by-case for signed-data chain, bundle/environment, notification UUID, transaction ID, event time, refund, and revoke. Then make `GoogleNotificationVerifierTest` green for Pub/Sub envelope, authentication boundary, package/product/token, event ID/time, refund, and revoke. Finally use their `VerifiedStoreEvent` output in `StoreNotificationIntegrationTest` to prove unique event insertion, duplicate acknowledgement, newer-event application, and older-event no-op. Run each named test before moving to the next protocol.
+First make `AppleNotificationVerifierTest` green case-by-case for signed-data chain, bundle/environment, notification UUID, transaction ID, event time, refund, and revoke.
+
+Then make `GoogleNotificationVerifierTest` green in these slices: require `Bearer` header; validate OIDC signature and `iss`; validate configured push endpoint `aud`; require verified email equal to the configured Pub/Sub push service account; decode the base64 Pub/Sub envelope; validate package/subscription/event ID; call `GooglePlayPurchaseClient` with the decoded token; derive event state/time from that authoritative Play response. A body without a valid header must fail before Play API I/O. The controller constructs `GooglePushRequest` from the HTTP `Authorization` header, configured audience, and raw body.
+
+Finally use the two adapters' `VerifiedStoreEvent` output in `StoreNotificationIntegrationTest` to prove unique event insertion, duplicate acknowledgement, newer-event application, and older-event no-op. Run each named test before moving to the next protocol.
 
 - [ ] **Step 4: Add Flutter IAP and failing controller tests**
 
 Run: `cd mobile && flutter pub add in_app_purchase:3.3.1`
 
+```dart
+enum StorePurchaseStatus { pending, purchased, restored, failed, cancelled }
+enum PremiumState { unavailable, available, pending, active, revoked, error }
+
+final class StorePurchaseUpdate {
+  const StorePurchaseUpdate({required this.status, required this.productId,
+    required this.verificationData});
+  final StorePurchaseStatus status;
+  final String productId;
+  final String verificationData;
+}
+
+abstract interface class StorePurchaseService {
+  Stream<StorePurchaseUpdate> get updates;
+  Future<String> localizedPrice(String productId);
+  Future<void> buy(String productId);
+  Future<void> restore();
+  Future<void> finish(StorePurchaseUpdate update);
+}
+
+abstract interface class PremiumController {
+  Future<void> purchase();
+  Future<void> restore();
+  Stream<PremiumState> get state;
+}
+```
+
 Tests assert sign-in required before store UI, disabled config prevents purchase, pending transaction remains visible, client sends proof to backend before enabling Premium, backend rejection completes/finishes store flow safely, restore is idempotent, refund removes Premium, and API outage never charges twice.
+
+Implement one `premium_controller_test.dart` case at a time in this order: sign-in/config guards; localized product load; pending update; purchased proof sent to backend; backend grant enables Premium; rejection finishes safely without entitlement; restore idempotency; transient API retry with the same proof; revoked/refunded refresh removes Premium. Run the named test file after every minimal controller change. Implement `PlatformStorePurchaseService` only after all controller cases pass against a fake, then add adapter tests for mapping `in_app_purchase` updates and finishing each transaction once.
 
 - [ ] **Step 5: Implement Premium UI and features**
 
@@ -398,7 +458,6 @@ Release builds deliberately remain monetization-disabled. Record artifact hashes
 README may state only locally verified behavior. It must say store submission, production identity review, live purchase sandbox validation, live ad consent validation, and production activation remain incomplete until actually performed.
 
 ```bash
-cd ..
 git add mobile backend docs README.md codex
 git commit -m "test: verify monetized release candidate"
 ```

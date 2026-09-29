@@ -50,7 +50,9 @@
 - Create: `mobile/ios/Config/Auth.local.xcconfig.example`
 - Create: `mobile/ios/Config/Auth.defaults.xcconfig`
 - Modify: `mobile/ios/Runner/Info.plist`
+- Create: `mobile/ios/Runner/Runner.entitlements`
 - Modify: `mobile/ios/Runner.xcodeproj/project.pbxproj`
+- Modify: `.gitignore`
 - Create: `mobile/test/auth/auth_controller_test.dart`
 - Create: `mobile/test/auth/authenticated_api_client_test.dart`
 - Create: `mobile/test/auth/provider_priority_test.dart`
@@ -132,7 +134,16 @@ Run `flutter test test/auth/auth_controller_test.dart test/auth/authenticated_ap
 
 - [ ] **Step 5: Implement platform configuration without secrets**
 
-`mobile/android/auth.properties.example` defines `APPLE_SERVICE_ID`, `APPLE_REDIRECT_URI`, `GOOGLE_SERVER_CLIENT_ID`, and `API_BASE_URL`; `build.gradle.kts` reads an optional untracked `auth.properties` and otherwise uses empty local-build values. `mobile/ios/Config/Auth.defaults.xcconfig` defines empty local-build values and optionally includes untracked `Auth.local.xcconfig`; `Auth.local.xcconfig.example` documents `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_REVERSED_CLIENT_ID`, and `API_BASE_URL`. The Xcode project includes the committed defaults file, so a fresh checkout builds while provider actions report unconfigured state. Android Apple login uses the package browser callback flow; iOS adds the Sign in with Apple entitlement and Google URL scheme.
+`mobile/android/auth.properties.example` defines `APPLE_SERVICE_ID`, `APPLE_REDIRECT_URI`, `GOOGLE_SERVER_CLIENT_ID`, and `API_BASE_URL`; `build.gradle.kts` reads an optional untracked `auth.properties` and otherwise uses empty local-build values. `mobile/ios/Config/Auth.defaults.xcconfig` defines empty local-build values and optionally includes untracked `Auth.local.xcconfig`; `Auth.local.xcconfig.example` documents `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_REVERSED_CLIENT_ID`, and `API_BASE_URL`. Add both local filenames to `.gitignore`. The Xcode project includes the committed defaults file, so a fresh checkout builds while provider actions report unconfigured state. Android Apple login uses the package browser callback flow.
+
+`mobile/ios/Runner/Runner.entitlements` contains:
+
+```xml
+<key>com.apple.developer.applesignin</key>
+<array><string>Default</string></array>
+```
+
+Set `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements` for Debug/Profile/Release in `project.pbxproj`, add the Google URL scheme to `Info.plist`, and add a configuration test that parses the entitlements and project file before adapter tests. The test asserts the key, all three build configurations, optional local config include, and ignored local filenames.
 
 Add one adapter contract case at a time in `provider_priority_test.dart`: Apple success/cancel on each platform, then Google success/cancel on each platform, then platform priority. Implement only the adapter under test and rerun that file. Finish with `flutter build apk --debug` and `flutter build ios --simulator --no-codesign` using local non-secret test configuration.
 
