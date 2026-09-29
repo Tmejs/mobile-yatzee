@@ -2,7 +2,7 @@
 
 **Created:** 2026-09-27
 **Last updated:** 2026-09-28
-**Status:** Approved conversational design, revised identity and monetization awaiting written-spec review
+**Status:** Approved product, identity, and monetization design
 
 ## 1. Purpose and success criteria
 
