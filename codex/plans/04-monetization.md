@@ -50,6 +50,7 @@
 - Create: `mobile/test/monetization/native_release_config_test.dart`
 - Create: `mobile/android/monetization.properties.example`
 - Create: `mobile/ios/Config/Monetization.xcconfig.example`
+- Modify: `.gitignore`
 - Create: `mobile/lib/src/monetization/domain/monetization_config.dart`
 - Create: `mobile/lib/src/monetization/domain/ad_eligibility.dart`
 - Create: `mobile/lib/src/monetization/data/ad_counter_repository.dart`
@@ -131,7 +132,7 @@ Add `com.google.android.gms.ads.APPLICATION_ID` metadata to `AndroidManifest.xml
 <string>$(ADMOB_APP_ID)</string>
 ```
 
-`mobile/android/app/build.gradle.kts` loads `ADMOB_APP_ID` from an optional local `monetization.properties`, falling back to Google's official Android test app ID for debug/local builds, and sets `manifestPlaceholders["ADMOB_APP_ID"]`. `mobile/ios/Config/Monetization.xcconfig` defines Google's official iOS test app ID; both Flutter xcconfig files `#include` it after `Generated.xcconfig`, and a local/release override may replace `ADMOB_APP_ID`. Keep ad-unit IDs separate from application IDs. Add configuration assertions that resolve both native values before the first app-start test.
+`mobile/android/app/build.gradle.kts` loads `ADMOB_APP_ID` from optional local `mobile/android/monetization.properties`, falling back to Google's official Android test app ID for debug/local builds, and sets `manifestPlaceholders["ADMOB_APP_ID"]`. `mobile/ios/Config/Monetization.xcconfig` defines Google's official iOS test app ID; both Flutter xcconfig files `#include` it after `Generated.xcconfig`, and optional `mobile/ios/Config/Monetization.local.xcconfig` may replace `ADMOB_APP_ID`. Add both local override files to `.gitignore`. Keep ad-unit IDs separate from application IDs. Add configuration assertions that resolve both native values before the first app-start test.
 
 `validate_monetization_release_config.sh` rejects a missing ID and both official test app IDs. Gradle invokes it for Release when `MONETIZATION_RELEASE_ENABLED=true`; an Xcode Run Script phase invokes it when the matching build setting is `YES`. `native_release_config_test.dart` proves missing/test IDs fail and a non-test fixture passes without committing a production ID. Monetization-disabled release candidates may use test IDs, but an enabled release cannot compile until a real app ID is injected.
 
@@ -238,6 +239,7 @@ git commit -m "feat: add safe post-game advertising controls"
 - Create: `mobile/lib/src/theme/premium_theme_catalog.dart`
 - Create: `mobile/lib/src/history/premium_statistics.dart`
 - Create: `mobile/test/monetization/premium_controller_test.dart`
+- Create: `mobile/test/monetization/platform_store_purchase_service_test.dart`
 - Create: `mobile/test/theme/premium_theme_catalog_test.dart`
 
 **Interfaces:**

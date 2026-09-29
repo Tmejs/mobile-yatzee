@@ -139,8 +139,14 @@ Run `flutter test test/auth/auth_controller_test.dart test/auth/authenticated_ap
 `mobile/ios/Runner/Runner.entitlements` contains:
 
 ```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
 <key>com.apple.developer.applesignin</key>
 <array><string>Default</string></array>
+</dict>
+</plist>
 ```
 
 Set `CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements` for Debug/Profile/Release in `project.pbxproj`, add the Google URL scheme to `Info.plist`, and add a configuration test that parses the entitlements and project file before adapter tests. The test asserts the key, all three build configurations, optional local config include, and ignored local filenames.
