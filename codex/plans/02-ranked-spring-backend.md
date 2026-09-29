@@ -62,6 +62,8 @@ Pin `<java.version>25</java.version>` and Spring Boot parent `4.1.1`. Add starte
 
 `compose.yaml` defines PostgreSQL 18 with database/user `mobile_yatzee`, password supplied from `POSTGRES_PASSWORD`, healthcheck `pg_isready`, and no committed production credential. `.env.example` contains `POSTGRES_PASSWORD=local-development-only`.
 
+`application.yml` reads `spring.datasource.password: ${POSTGRES_PASSWORD:local-development-only}` for the local profile; production deployment must set `POSTGRES_PASSWORD`. Every multi-command local gate exports the variable once so Compose, Spring, and backup/restore use the same value.
+
 - [ ] **Step 2: Write a failing cross-language fixture test**
 
 ```java
@@ -425,7 +427,8 @@ Add `backend/tool/backup-restore-readiness.sh`: create a dump with `pg_dump`, re
 - [ ] **Step 5: Run complete backend alpha gate**
 
 ```bash
-POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
+export POSTGRES_PASSWORD=local-development-only
+docker compose up -d postgres
 cd backend && ./tool/verify.sh
 ./mvnw spring-boot:run >/tmp/mobile-yatzee-backend.log 2>&1 &
 BACKEND_PROCESS_ID=$!
@@ -436,7 +439,7 @@ for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
 done
 curl --fail http://localhost:8080/actuator/health
 kill "$BACKEND_PROCESS_ID"
-POSTGRES_PASSWORD=local-development-only ./backend/tool/backup-restore-readiness.sh
+./backend/tool/backup-restore-readiness.sh
 docker compose down
 ```
 

@@ -132,7 +132,7 @@ Follow the repository checkpoint gate, including independent review and `--no-ff
 - Create: `mobile/lib/src/game/rules/polish_general_ruleset.dart`
 - Create: `mobile/test/support/conformance_fixture.dart`
 - Create: `mobile/test/game/rules/polish_general_ruleset_test.dart`
-- Modify: `mobile/pubspec.yaml` for test dependencies; fixtures stay outside package assets and tests resolve `Directory.current.parent.path/rulesets/<file>.json` when invoked from `mobile/`.
+- Modify: `mobile/pubspec.yaml` for test dependencies; fixtures stay outside package assets and tests resolve `path.join(Directory.current.parent.path, 'rulesets', fileName)` when invoked from `mobile/`.
 
 **Interfaces:**
 - Consumes: none.

@@ -40,7 +40,11 @@
 - Modify: `api/openapi.yaml`
 - Modify: `mobile/pubspec.yaml`
 - Modify: `mobile/android/app/src/main/AndroidManifest.xml`
+- Modify: `mobile/android/app/build.gradle.kts`
 - Modify: `mobile/ios/Runner/Info.plist`
+- Modify: `mobile/ios/Flutter/Debug.xcconfig`
+- Modify: `mobile/ios/Flutter/Release.xcconfig`
+- Create: `mobile/ios/Config/Monetization.xcconfig`
 - Create: `mobile/android/monetization.properties.example`
 - Create: `mobile/ios/Config/Monetization.xcconfig.example`
 - Create: `mobile/lib/src/monetization/domain/monetization_config.dart`
@@ -93,14 +97,20 @@ Values come from validated server configuration; absence resolves to false. Rege
 @ConfigurationProperties("app.monetization")
 public record AppMonetizationProperties(
     boolean enabled, boolean adsEnabled, boolean premiumPurchaseEnabled,
-    String premiumProductId) {}
+    String premiumProductId) {
+  public AppMonetizationProperties {
+    if (premiumProductId == null || premiumProductId.isBlank()) {
+      premiumProductId = "premium_lifetime";
+    }
+  }
+}
 
 public record PublicAppConfig(
     boolean monetizationEnabled, boolean adsEnabled,
     boolean premiumPurchaseEnabled, String premiumProductId) {}
 ```
 
-First make `PublicAppConfigTest` fail for absent properties and the three independent enable flags. Implement the records and controller, run `./mvnw -Dtest=PublicAppConfigTest test`, add the OpenAPI path/schema, regenerate twice, and run the contract test.
+Bind `premiumProductId` with the safe default `premium_lifetime` when absent. First make `PublicAppConfigTest` fail for absent properties/default product and the three independent enable flags. Implement the records and controller, run `./mvnw -Dtest=PublicAppConfigTest test`, add the OpenAPI path/schema, regenerate twice, and run the contract test.
 
 - [ ] **Step 3: Add SDK and write failing fallthrough tests**
 
@@ -118,7 +128,7 @@ Add `com.google.android.gms.ads.APPLICATION_ID` metadata to `AndroidManifest.xml
 <string>$(ADMOB_APP_ID)</string>
 ```
 
-The Android example defines `ADMOB_APP_ID`, Gradle supplies it to the manifest value map, and the iOS example defines the same xcconfig key. Keep ad-unit IDs separate from application IDs.
+`mobile/android/app/build.gradle.kts` loads `ADMOB_APP_ID` from an optional local `monetization.properties`, falling back to Google's official Android test app ID for debug/local builds, and sets `manifestPlaceholders["ADMOB_APP_ID"]`. `mobile/ios/Config/Monetization.xcconfig` defines Google's official iOS test app ID; both Flutter xcconfig files `#include` it after `Generated.xcconfig`, and a local/release override may replace `ADMOB_APP_ID`. Keep ad-unit IDs separate from application IDs. Add build-script tests or configuration assertions that resolve both native values before the first app-start test.
 
 ```dart
 abstract interface class AdService {
@@ -189,11 +199,18 @@ git commit -m "feat: add safe post-game advertising controls"
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StorePurchaseVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleStorePurchaseVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GoogleStorePurchaseVerifier.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/AppleTransactionClient.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/GooglePlayPurchaseClient.java`
+- Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationVerifier.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationService.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/EntitlementController.java`
 - Create: `backend/src/main/java/pl/tmejs/mobileyatzee/api/StoreNotificationController.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/EntitlementIntegrationTest.java`
 - Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/StoreNotificationIntegrationTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/AppleStorePurchaseVerifierTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/GoogleStorePurchaseVerifierTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/AppleNotificationVerifierTest.java`
+- Create: `backend/src/test/java/pl/tmejs/mobileyatzee/entitlement/GoogleNotificationVerifierTest.java`
 - Modify: `backend/src/main/java/pl/tmejs/mobileyatzee/profile/AccountDeletionService.java`
 - Modify: `backend/src/test/java/pl/tmejs/mobileyatzee/profile/AccountDeletionIntegrationTest.java`
 - Modify: `api/openapi.yaml`
@@ -232,13 +249,48 @@ public record VerifiedPurchase(
     String productId,
     Instant purchasedAt,
     PurchaseState state) {}
+
+public enum Store { APPLE, GOOGLE }
+public enum PurchaseState { ACTIVE, REVOKED, REFUNDED }
+
+public record AppleTransaction(String transactionId, String bundleId,
+    String productId, String environment, Instant purchasedAt,
+    PurchaseState state) {}
+
+public record GoogleProductPurchase(String purchaseToken, String packageName,
+    String productId, Instant purchasedAt, PurchaseState state) {}
+
+public record VerifiedStoreEvent(String eventId, Store store,
+    String normalizedTransactionId, Instant occurredAt,
+    PurchaseState state) {}
+
+public interface AppleTransactionClient {
+    AppleTransaction verifySignedTransaction(String jws);
+}
+
+public interface GooglePlayPurchaseClient {
+    GoogleProductPurchase getProductPurchase(
+        String packageName, String productId, String purchaseToken);
+}
+
+public interface StoreNotificationVerifier {
+    VerifiedStoreEvent verify(Store store, String signedPayload);
+}
 ```
 
 Apple adapter verifies signed transaction/JWS chain and bundle/product/environment. Google adapter calls the Play Developer product purchase API and verifies package/product/purchase state. Credentials/keys come from secret configuration and never persist in repository or logs.
 
+Implement with separate red/green slices:
+
+1. In `AppleStorePurchaseVerifierTest`, add valid JWS, bad chain/signature, wrong bundle, wrong product, wrong environment, and revoked-state cases one at a time. `AppleTransactionClient` owns JWS/App Store library calls; map its verified DTO to `VerifiedPurchase`. Run that single test after every case.
+2. In `GoogleStorePurchaseVerifierTest`, add valid response, API auth/error, wrong package/product, pending, cancelled, and replayed-token cases one at a time. `GooglePlayPurchaseClient` owns HTTP/auth; map only a verified completed product purchase. Run that single test after every case.
+3. Add `EntitlementService.verifyAndGrant(PlayerId, Store, productId, proof)` integration cases for idempotency, concurrent ownership, and conflict. Only this service writes entitlements; adapters never write the database.
+
 - [ ] **Step 3: Implement notification idempotency and ordering**
 
 Verify App Store Server Notification V2 and Google RTDN authenticity, store notification IDs uniquely, and apply events only when their store event time/version is newer than the entitlement state. Duplicate or out-of-order notifications return success without rolling state backward.
+
+First make `AppleNotificationVerifierTest` green case-by-case for signed-data chain, bundle/environment, notification UUID, transaction ID, event time, refund, and revoke. Then make `GoogleNotificationVerifierTest` green for Pub/Sub envelope, authentication boundary, package/product/token, event ID/time, refund, and revoke. Finally use their `VerifiedStoreEvent` output in `StoreNotificationIntegrationTest` to prove unique event insertion, duplicate acknowledgement, newer-event application, and older-event no-op. Run each named test before moving to the next protocol.
 
 - [ ] **Step 4: Add Flutter IAP and failing controller tests**
 
@@ -306,19 +358,37 @@ Turn ads off between eligibility and show: no ad. Turn purchase off before store
 - [ ] **Step 4: Run complete repository gate**
 
 ```bash
-POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
+export POSTGRES_PASSWORD=local-development-only
+REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
+docker compose up -d postgres
 cd backend
 ./tool/verify.sh
+./mvnw spring-boot:run -Dspring-boot.run.profiles=e2e \
+  >/tmp/mobile-yatzee-monetization-backend.log 2>&1 &
+BACKEND_PROCESS_ID=$!
+trap 'kill "$BACKEND_PROCESS_ID" 2>/dev/null || true; cd "$REPOSITORY_ROOT"; docker compose down' EXIT
+for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+  curl --fail http://127.0.0.1:8080/actuator/health && break
+  sleep 1
+done
+curl --fail http://127.0.0.1:8080/actuator/health
 cd ../mobile
 ./tool/verify.sh
 flutter test integration_test/full_ranked_flow_test.dart \
+  --dart-define=API_BASE_URL=http://127.0.0.1:8080 \
   --dart-define=MONETIZATION_ENABLED=false
 flutter test integration_test/monetization_flow_test.dart \
+  --dart-define=API_BASE_URL=http://127.0.0.1:8080 \
   --dart-define=MONETIZATION_ENABLED=true \
   --dart-define=USE_FAKE_ADS=true \
   --dart-define=USE_FAKE_STORE=true
 flutter build appbundle --release --dart-define=MONETIZATION_ENABLED=false
 flutter build ios --release --no-codesign --dart-define=MONETIZATION_ENABLED=false
+kill "$BACKEND_PROCESS_ID"
+wait "$BACKEND_PROCESS_ID" || true
+cd ..
+docker compose down
+trap - EXIT
 ```
 
 Release builds deliberately remain monetization-disabled. Record artifact hashes and all results in the checkpoint review.

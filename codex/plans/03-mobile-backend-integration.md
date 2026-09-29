@@ -44,6 +44,13 @@
 - Create: `mobile/lib/src/auth/data/authenticated_api_client.dart`
 - Create: `mobile/lib/src/auth/application/auth_controller.dart`
 - Create: `mobile/lib/src/auth/presentation/sign_in_sheet.dart`
+- Create: `mobile/android/auth.properties.example`
+- Modify: `mobile/android/app/build.gradle.kts`
+- Modify: `mobile/android/app/src/main/AndroidManifest.xml`
+- Create: `mobile/ios/Config/Auth.local.xcconfig.example`
+- Create: `mobile/ios/Config/Auth.defaults.xcconfig`
+- Modify: `mobile/ios/Runner/Info.plist`
+- Modify: `mobile/ios/Runner.xcodeproj/project.pbxproj`
 - Create: `mobile/test/auth/auth_controller_test.dart`
 - Create: `mobile/test/auth/authenticated_api_client_test.dart`
 - Create: `mobile/test/auth/provider_priority_test.dart`
@@ -73,6 +80,14 @@ Add the generated package as a path dependency. Run generation twice and assert 
 
 ```dart
 enum IdentityProvider { apple, google }
+
+final class ProviderCredential {
+  const ProviderCredential({required this.provider, required this.token,
+    required this.nonce});
+  final IdentityProvider provider;
+  final String token;
+  final String nonce;
+}
 
 abstract interface class ProviderIdentity {
   Future<ProviderCredential> authenticate({required String nonce});
@@ -105,9 +120,21 @@ Expected: FAIL because adapters/controllers do not exist.
 
 Implement `AuthController.signOut()` as best-effort server revocation followed by `SessionStore.clear()` in `finally`. Expose only `signedOut` after secure storage is cleared.
 
+Use these red/green slices, running the named file after each minimal change:
+
+1. Add the successful exchange case to `auth_controller_test.dart`; implement nonce creation, provider call, generated exchange call, and secure refresh-token write.
+2. Add cancellation and exchange-failure cases; implement state rollback without persisting provider credentials.
+3. Add one-expired-request and concurrent-expired-request cases to `authenticated_api_client_test.dart`; implement the shared in-flight refresh future and one retry.
+4. Add the second-`401` case; implement `sessionExpired` and local clear.
+5. Add successful and network-failed revoke cases; implement best-effort `DELETE /v1/auth/sessions/current` plus `finally` clear.
+
+Run `flutter test test/auth/auth_controller_test.dart test/auth/authenticated_api_client_test.dart` after the five slices, then continue to native adapters.
+
 - [ ] **Step 5: Implement platform configuration without secrets**
 
-Use build-time configuration for Apple service ID/redirect URI, Google client IDs, and API base URL. Commit `.xcconfig.example`/Gradle property examples, not secrets. Android Apple login uses the package's browser callback flow; iOS configures the Sign in with Apple capability and Google URL scheme.
+`mobile/android/auth.properties.example` defines `APPLE_SERVICE_ID`, `APPLE_REDIRECT_URI`, `GOOGLE_SERVER_CLIENT_ID`, and `API_BASE_URL`; `build.gradle.kts` reads an optional untracked `auth.properties` and otherwise uses empty local-build values. `mobile/ios/Config/Auth.defaults.xcconfig` defines empty local-build values and optionally includes untracked `Auth.local.xcconfig`; `Auth.local.xcconfig.example` documents `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_REVERSED_CLIENT_ID`, and `API_BASE_URL`. The Xcode project includes the committed defaults file, so a fresh checkout builds while provider actions report unconfigured state. Android Apple login uses the package browser callback flow; iOS adds the Sign in with Apple entitlement and Google URL scheme.
+
+Add one adapter contract case at a time in `provider_priority_test.dart`: Apple success/cancel on each platform, then Google success/cancel on each platform, then platform priority. Implement only the adapter under test and rerun that file. Finish with `flutter build apk --debug` and `flutter build ios --simulator --no-codesign` using local non-secret test configuration.
 
 - [ ] **Step 6: Run focused and complete gates**
 
@@ -304,7 +331,8 @@ Require fresh provider flow, explain ranked-history removal and local-history re
 Start PostgreSQL/backend with controlled provider issuer, run Flutter integration flow for sign-in, country, ten submissions, provisional/eligible boards, duplicate retry, cross-provider link, recovery, and deletion. Use network fault injection for one queued retry.
 
 ```bash
-POSTGRES_PASSWORD=local-development-only docker compose up -d postgres
+export POSTGRES_PASSWORD=local-development-only
+docker compose up -d postgres
 cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=e2e
 ```
 
@@ -331,13 +359,17 @@ On configured local devices, list identifiers and read the selected values into 
 
 ```bash
 flutter devices --machine
-read -r -p "Android device ID: " ANDROID_DEVICE_ID
-read -r -p "iOS simulator ID: " IOS_SIMULATOR_ID
-flutter test integration_test/full_ranked_flow_test.dart -d "$ANDROID_DEVICE_ID"
-flutter test integration_test/full_ranked_flow_test.dart -d "$IOS_SIMULATOR_ID"
+: "${ANDROID_DEVICE_ID:?Export ANDROID_DEVICE_ID from flutter devices output}"
+: "${IOS_SIMULATOR_ID:?Export IOS_SIMULATOR_ID from flutter devices output}"
+ANDROID_API_BASE_URL="${ANDROID_API_BASE_URL:-http://10.0.2.2:8080}"
+IOS_API_BASE_URL="${IOS_API_BASE_URL:-http://127.0.0.1:8080}"
+flutter test integration_test/full_ranked_flow_test.dart -d "$ANDROID_DEVICE_ID" \
+  --dart-define=API_BASE_URL="$ANDROID_API_BASE_URL"
+flutter test integration_test/full_ranked_flow_test.dart -d "$IOS_SIMULATOR_ID" \
+  --dart-define=API_BASE_URL="$IOS_API_BASE_URL"
 ```
 
-Record the resolved IDs and OS versions in the checkpoint review. Provider SDK behavior that controlled issuers cannot exercise is recorded as adapter-contract coverage; do not claim store-provider end-to-end coverage until sandbox Apple and Google credentials are tested.
+The Android default targets the standard emulator host alias; export `ANDROID_API_BASE_URL` with the Mac's reachable LAN address for a physical device. Record resolved IDs, URLs, and OS versions in the checkpoint review. Provider SDK behavior that controlled issuers cannot exercise is recorded as adapter-contract coverage; do not claim store-provider end-to-end coverage until sandbox Apple and Google credentials are tested.
 
 Record all outputs and limitations in `codex/reviews/checkpoint-17-early-access.md`. Update README with verified local/ranked behavior and clearly label deployment/store publication as not yet performed.
 
