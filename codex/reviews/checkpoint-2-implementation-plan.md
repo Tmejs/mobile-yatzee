@@ -40,4 +40,3 @@ The final reviewer audit of commit `d5fa66b` reports no Critical, Important, or 
 - `git diff --check main...HEAD`: passed.
 - Placeholder scan: passed; the only literal use of the word is the real Gradle API name `manifestPlaceholders`.
 - Flutter, Java, database, simulator, and end-to-end tests: not applicable because this checkpoint changes planning documentation only; their exact gates are specified for implementation checkpoints.
-
