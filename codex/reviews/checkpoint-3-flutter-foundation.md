@@ -11,7 +11,7 @@ Engine • hash 0e228ec8c8d2abc9fcf1d053e8a40665bb859ec7 (revision 06a2e2a110) (
 Tools • Dart 3.13.3 • DevTools 2.60.0
 ```
 
-The SDK was preinstalled and its release archive checksum had been verified before this task. The SDK initialized its cache on first use.
+The SDK was installed for this checkpoint from the official Flutter 3.47.3 Apple Silicon release archive, and the archive checksum was verified. The SDK initialized its cache on first use.
 
 ## Test-driven root widget
 
@@ -61,3 +61,16 @@ No issues found! (ran in 5.4s)
 ## Review status
 
 Self-review is recorded in the task report after the implementation commit. Independent review and checkpoint push/merge are pending the coordinating agent.
+
+## Review fix round 1
+
+Independent review identified an Important localization issue: the home title was a domain-visible literal in the widget. It also identified a Minor inconsistency in installed Android/iOS names. The root now resolves `AppStringKey.homeTitle` through `AppStrings.polish`; Android uses `@string/app_name` backed by a Polish resource and iOS displays `Generał`.
+
+Test-first evidence:
+
+- `flutter test test/localization_test.dart` failed with undefined `AppStringKey` and `AppStrings`, then `flutter test test/localization_test.dart test/app_smoke_test.dart` passed both tests.
+- `flutter test test/platform_labels_test.dart` failed because Android's manifest still used `android:label="mobile_yatzee"`, then passed after the platform label changes.
+- Complete `./tool/verify.sh` passed: six Dart files formatted with zero changes, `flutter analyze` found no issues, and all three tests passed.
+- `git diff --check` exited 0 with no output.
+
+The exact RED/GREEN and gate outputs are retained in `.superpowers/sdd/01-offline-flutter-game/task-3-report.md`. Follow-up independent review remains with the coordinating agent.

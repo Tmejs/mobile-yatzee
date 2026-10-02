@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_yatzee/src/localization/app_strings.dart';
 
 class MobileYatzeeApp extends StatelessWidget {
   const MobileYatzeeApp({super.key});
@@ -6,6 +7,8 @@ class MobileYatzeeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: const Scaffold(body: Center(child: Text('Generał'))),
+    home: Scaffold(
+      body: Center(child: Text(AppStrings.polish(AppStringKey.homeTitle))),
+    ),
   );
 }
