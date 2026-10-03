@@ -31,6 +31,7 @@
 - Riverpod application root and Polish `Generał` smoke screen implemented through a stable localization key.
 - Android and iOS installed app labels aligned to `Generał`.
 - Local mobile gate covers formatting, analysis, and Flutter tests.
+- The gate restores Flutter packages before formatting and passes from a dependency-free checkout without package-resolution warnings.
 - Test-first RED/GREEN evidence recorded for the application root, localization boundary, and platform labels.
-- Task review, scoped re-review, and broad final review passed with no remaining Critical, Important, or Minor findings.
+- Task review, scoped re-review, broad final review, and post-merge verification-fix review passed with no remaining Critical, Important, or Minor findings.
 - Native device/simulator builds are deferred to their planned later checkpoints.
