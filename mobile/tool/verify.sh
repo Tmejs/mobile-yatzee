@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+flutter pub get
 FORMAT_PATHS=(lib test)
 if [[ -d integration_test ]]; then
   FORMAT_PATHS+=(integration_test)

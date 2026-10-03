@@ -80,3 +80,201 @@ The exact RED/GREEN and gate outputs are retained in the ignored task workspace 
 The final reviewer inspected the complete two-commit branch against the task brief, approved design, repository rules, and recorded verification evidence. The review found no Critical, Important, or Minor issues and judged the branch ready to merge within the foundation scope.
 
 The review explicitly left gameplay, rules engines, persistence, backend integration, full ARB localization, Modern Tabletop styling, device builds, signing, and store preparation to their planned later checkpoints. Native builds remain unverified in this checkpoint.
+
+
+## Post-merge review fix round 2: clean-checkout gate
+
+A clean copy without `.dart_tool` or `build` exposed the gate defect: `dart format` ran before package resolution and emitted package-resolution warnings while the script still exited 0. `mobile/tool/verify.sh` now runs `flutter pub get` before formatting. Dependencies and the remaining format/analyze/test steps are unchanged. The README needed no change.
+
+RED: copied `mobile/` to `/private/tmp/flutter-foundation-red.ev5IoT/mobile/` with `.dart_tool` and `build` excluded, then ran `PATH=/Users/matrzad/develop/flutter-3.47.3/flutter/bin:$PATH ./tool/verify.sh > gate.log 2>&1` from that copy. Script exit: 0; package-resolution warning present. Exact combined output:
+
+```text
+Warning: Package resolution error when reading "analysis_options.yaml" file for "lib/main.dart":
+Failed to resolve package URI "package:flutter_lints/flutter.yaml" in include at "/private/tmp/flutter-foundation-red.ev5IoT/mobile/analysis_options.yaml".
+Warning: Package resolution error when reading "analysis_options.yaml" file for "lib/src/app.dart":
+Failed to resolve package URI "package:flutter_lints/flutter.yaml" in include at "/private/tmp/flutter-foundation-red.ev5IoT/mobile/analysis_options.yaml".
+Warning: Package resolution error when reading "analysis_options.yaml" file for "lib/src/localization/app_strings.dart":
+Failed to resolve package URI "package:flutter_lints/flutter.yaml" in include at "/private/tmp/flutter-foundation-red.ev5IoT/mobile/analysis_options.yaml".
+Warning: Package resolution error when reading "analysis_options.yaml" file for "test/app_smoke_test.dart":
+Failed to resolve package URI "package:flutter_lints/flutter.yaml" in include at "/private/tmp/flutter-foundation-red.ev5IoT/mobile/analysis_options.yaml".
+Formatted 6 files (0 changed) in 0.00 seconds.
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing mobile...\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20
+No issues found! (ran in 5.4s)
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /private/tmp/flutter-foundation-red.ev5IoT/mobile/test/platform_labels_test.dart
+00:00 +0: /private/tmp/flutter-foundation-red.ev5IoT/mobile/test/platform_labels_test.dart: installed app labels use the Polish game title
+00:00 +1: /private/tmp/flutter-foundation-red.ev5IoT/mobile/test/localization_test.dart: Polish home title resolves from a stable key
+00:00 +2: /private/tmp/flutter-foundation-red.ev5IoT/mobile/test/app_smoke_test.dart: starts in Polish and shows the home title
+00:00 +3: All tests passed!
+```
+
+GREEN: copied the updated `mobile/` to `/private/tmp/flutter-foundation-green.rvyW8d/mobile/` with `.dart_tool` and `build` excluded, then ran the same command. Script exit: 0. `rg -q 'Warning: Package resolution error' gate.log` found no match (`PACKAGE_WARNING_CHECK=PASS`). Exact combined output:
+
+```text
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Formatted 6 files (0 changed) in 0.01 seconds.
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing mobile...\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20
+No issues found! (ran in 5.3s)
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /private/tmp/flutter-foundation-green.rvyW8d/mobile/test/platform_labels_test.dart
+00:00 +0: /private/tmp/flutter-foundation-green.rvyW8d/mobile/test/platform_labels_test.dart: installed app labels use the Polish game title
+00:00 +1: /private/tmp/flutter-foundation-green.rvyW8d/mobile/test/localization_test.dart: Polish home title resolves from a stable key
+00:00 +2: /private/tmp/flutter-foundation-green.rvyW8d/mobile/test/app_smoke_test.dart: starts in Polish and shows the home title
+00:00 +3: All tests passed!
+```
+
+Complete worktree gate: `cd mobile && PATH=/Users/matrzad/develop/flutter-3.47.3/flutter/bin:$PATH ./tool/verify.sh` (exit 0). Exact combined output:
+
+```text
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Formatted 6 files (0 changed) in 0.01 seconds.
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing mobile...\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20
+No issues found! (ran in 5.4s)
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cupertino_icons 1.0.9 (2.0.0 available)
+  drift 2.35.0 (2.35.1 available)
+  hooks 2.0.2 (2.2.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  native_toolchain_c 0.19.2 (0.19.5 available)
+  objective_c 9.5.0 (9.6.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  sqlite3 3.5.2 (3.7.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  vector_math 2.4.0 (2.4.3 available)
+Got dependencies!
+12 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /Users/matrzad/.codex/worktrees/checkpoint-1-design-auth/Logic game/mobile/test/platform_labels_test.dart
+00:00 +0: /Users/matrzad/.codex/worktrees/checkpoint-1-design-auth/Logic game/mobile/test/platform_labels_test.dart: installed app labels use the Polish game title
+00:00 +1: /Users/matrzad/.codex/worktrees/checkpoint-1-design-auth/Logic game/mobile/test/localization_test.dart: Polish home title resolves from a stable key
+00:00 +2: /Users/matrzad/.codex/worktrees/checkpoint-1-design-auth/Logic game/mobile/test/app_smoke_test.dart: starts in Polish and shows the home title
+00:00 +3: All tests passed!
+```
+
+`git diff --check` exited 0 with no output before recording this evidence; the staged diff was checked again before commit.
+
+In the recorded gate logs above, trailing progress padding on `Analyzing mobile...` is encoded as `\x20` per space so the review record passes `git diff --check`. The ignored task report preserves the raw output.
+
+### Independent review of the post-merge verification fix
+
+An independent reviewer examined `ae6c25a..1ed5b96` against `AGENTS.md` and Task 3 of the offline Flutter plan. The reviewer found no Critical, Important, or Minor issues and approved the fix for integration. The review confirmed that dependency restoration now precedes formatting under `set -euo pipefail`, the RED/GREEN record demonstrates the fresh-checkout defect and correction, and the change remains scoped to the verification script and its evidence.
+
+The coordinating agent also reran the complete gate from a dependency-free temporary copy after review. The command exited 0, formatting changed 0 files, analysis found no issues, all 3 tests passed, and the log contained no `Warning: Package resolution error` message.
