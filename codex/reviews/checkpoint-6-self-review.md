@@ -17,3 +17,11 @@ Reviewed each new production file in `mobile/lib/src/game/session/`, both sessio
 ## Findings and limits
 
 Self-review found no Critical or Important issue. The first full gate found two analyzer style notices for unbraced `if` statements; both were fixed before the passing final gate. Independent review is requested separately before any push. Native device execution and persistence round trips belong to later checkpoints.
+
+## Important finding and fix round 1
+
+Independent review found that `GameSession.restore` accepted category scores and repeat bonuses that no ruleset could produce, allowing corrupt totals and winners after Task 7 persistence. Initial self-review missed this. Five new regression cases failed before the fix, while a valid Classic repeat-bonus snapshot passed.
+
+The fix checks each recorded score against cached outcomes from `Ruleset.evaluate` over all 7,776 ordered five-die rolls. Cache entries are keyed by immutable ruleset ID and version, avoiding enumeration on later restores. Each ruleset now validates its own repeat-bonus state: Polish and Scandinavian require zero; Classic requires 100-point multiples, Yahtzee scored 50, and enough other filled categories to account for the repeat turns. The session stores no validator state and remains serializable.
+
+The restore regression file passes 6 tests, all 19 session tests pass, all 12 rules tests pass, and `./tool/verify.sh` passes formatting, analysis, and 34 Flutter tests. Staged `git diff --check` passed for the fix commit. Independent re-review is pending.
