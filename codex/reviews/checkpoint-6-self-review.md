@@ -25,3 +25,11 @@ Independent review found that `GameSession.restore` accepted category scores and
 The fix checks each recorded score against cached outcomes from `Ruleset.evaluate` over all 7,776 ordered five-die rolls. Cache entries are keyed by immutable ruleset ID and version, avoiding enumeration on later restores. Each ruleset now validates its own repeat-bonus state: Polish and Scandinavian require zero; Classic requires 100-point multiples, Yahtzee scored 50, and enough other filled categories to account for the repeat turns. The session stores no validator state and remains serializable.
 
 The restore regression file passes 6 tests, all 19 session tests pass, all 12 rules tests pass, and `./tool/verify.sh` passes formatting, analysis, and 34 Flutter tests. Staged `git diff --check` passed for the fix commit. Independent re-review is pending.
+
+## Important finding — fix round 2
+
+The first fix allowed a Classic snapshot with `yahtzee:50`, `full-house:25`, and 100 repeat-bonus points. A repeated Yahtzee must score in its matching unused upper category, so this scorecard has no legal recipient for the bonus. Four new negative regression cases failed before the fix; positive cases for an already filled matching upper, two bonuses where the first fills that upper, and forced upper zero after all lower categories are filled already passed.
+
+`ClassicYahtzeeRuleset.isValidRepeatedBonusState` now assigns each 100-point award to a distinct scored category by trying all relevant five-of-a-kind faces through its existing `evaluate` method. It searches recipient order, so a forced upper award can enable a later lower joker. Ordinary categories are treated as scored before the Yahtzee category. The search is bounded by the fixed 13-category card and runs only for nonzero repeat bonus snapshots. No Classic rules were copied into `GameSession`, and no shared scoring fixtures were changed.
+
+The restore file passed 13 tests, focused session suite passed 26, rules/conformance suite passed 12, and the full mobile gate passed formatting, analysis, and 41 Flutter tests. Staged `git diff --check` passed. Independent re-review remains pending.

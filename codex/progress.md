@@ -55,4 +55,4 @@
 
 - Added immutable, restorable session and player state for solo and two-to-four-player local games. A pure reducer applies rolls, holds, category selection, turn rotation, and completion through the versioned ruleset registry.
 - Focused session tests cover all three complete solo scorecards, complete four-player and tied two-player games, rejected commands, bonus totals, and stable standings.
-- The focused session suite (19 tests), rules suite (12 tests), full mobile gate (34 tests), formatting, and analysis pass locally after a review fix for restored scorecard validation. Independent re-review, push, and merge remain pending, so this checkpoint is not complete.
+- The focused session suite (26 tests), rules suite (12 tests), full mobile gate (41 tests), formatting, and analysis pass locally after two review fixes for restored scorecard validation, including Classic repeat-bonus placement feasibility. Independent re-review, push, and merge remain pending, so this checkpoint is not complete.
