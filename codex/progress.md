@@ -50,3 +50,9 @@
 - Captured RED runs for all three new test files before implementation; focused rules tests, the complete mobile gate, JSON integrity checks, and staged `git diff --check` passed.
 - Independent task review found one Important and one Minor fixture-coverage gap; both were fixed with focused mutation evidence and passed scoped re-review.
 - Broad final review and its documentation-fix re-review passed with no remaining Critical, Important, or Minor findings.
+
+## Checkpoint 6 — deterministic game session reducer (branch work)
+
+- Added immutable, restorable session and player state for solo and two-to-four-player local games. A pure reducer applies rolls, holds, category selection, turn rotation, and completion through the versioned ruleset registry.
+- Focused session tests cover all three complete solo scorecards, complete four-player and tied two-player games, rejected commands, bonus totals, and stable standings.
+- The focused session suite (13 tests), full mobile gate (28 tests), formatting, and analysis pass locally. Independent review, push, and merge remain pending, so this checkpoint is not complete.
