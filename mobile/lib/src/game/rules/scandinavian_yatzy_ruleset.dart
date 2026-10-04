@@ -115,6 +115,10 @@ final class ScandinavianYatzyRuleset implements Ruleset {
   }
 
   @override
+  bool isValidRepeatedBonusState(ScoreSheet sheet) =>
+      sheet.repeatedFiveOfAKindBonusTotal == 0;
+
+  @override
   ScoreTotals totals(ScoreSheet sheet) {
     final upper = _upper.fold<int>(
       0,

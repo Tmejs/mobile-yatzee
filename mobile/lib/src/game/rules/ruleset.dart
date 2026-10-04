@@ -13,4 +13,5 @@ abstract interface class Ruleset {
     ScoreSheet sheet,
   );
   ScoreTotals totals(ScoreSheet sheet);
+  bool isValidRepeatedBonusState(ScoreSheet sheet);
 }
