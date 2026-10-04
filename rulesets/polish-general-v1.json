@@ -1,0 +1,904 @@
+{
+  "ruleset": "polish-general",
+  "version": 1,
+  "cases": [
+    {
+      "name": "ones minimum",
+      "dice": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "category": "ones",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 1,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 1,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 1
+      }
+    },
+    {
+      "name": "ones maximum",
+      "dice": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "category": "ones",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 5,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 5,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 5
+      }
+    },
+    {
+      "name": "twos miss",
+      "dice": [
+        1,
+        1,
+        3,
+        4,
+        5
+      ],
+      "category": "twos",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "twos maximum",
+      "dice": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "category": "twos",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 10,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 10,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 10
+      }
+    },
+    {
+      "name": "threes maximum",
+      "dice": [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "category": "threes",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 15,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 15,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 15
+      }
+    },
+    {
+      "name": "fours maximum",
+      "dice": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "category": "fours",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 20,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 20,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 20
+      }
+    },
+    {
+      "name": "fives maximum",
+      "dice": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "category": "fives",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 25,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 25,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 25
+      }
+    },
+    {
+      "name": "sixes maximum",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "sixes",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 30,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 30,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 30
+      }
+    },
+    {
+      "name": "upper subtotal 62 has no bonus",
+      "dice": [
+        6,
+        6,
+        1,
+        2,
+        3
+      ],
+      "category": "sixes",
+      "priorState": {
+        "scores": {
+          "ones": 3,
+          "twos": 6,
+          "threes": 9,
+          "fours": 12,
+          "fives": 20
+        },
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 12,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 62,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 62
+      }
+    },
+    {
+      "name": "upper subtotal 63 gets fifty",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        2
+      ],
+      "category": "sixes",
+      "priorState": {
+        "scores": {
+          "ones": 3,
+          "twos": 6,
+          "threes": 9,
+          "fours": 16,
+          "fives": 5
+        },
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 24,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 63,
+        "upperBonus": 50,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 113
+      }
+    },
+    {
+      "name": "three kind miss",
+      "dice": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "category": "three-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "three ones minimum",
+      "dice": [
+        1,
+        1,
+        1,
+        2,
+        3
+      ],
+      "category": "three-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 3,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 3,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 3
+      }
+    },
+    {
+      "name": "four sixes in three kind counts three dice",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        2
+      ],
+      "category": "three-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 18,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 18,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 18
+      }
+    },
+    {
+      "name": "five sixes in three kind counts three dice",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "three-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 18,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 18,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 18
+      }
+    },
+    {
+      "name": "four kind miss",
+      "dice": [
+        6,
+        6,
+        6,
+        2,
+        2
+      ],
+      "category": "four-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "four ones minimum",
+      "dice": [
+        1,
+        1,
+        1,
+        1,
+        2
+      ],
+      "category": "four-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 4,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 4,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 4
+      }
+    },
+    {
+      "name": "four sixes counts four dice",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        2
+      ],
+      "category": "four-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 24,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 24,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 24
+      }
+    },
+    {
+      "name": "five sixes in four kind counts four dice",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "four-kind",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 24,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 24,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 24
+      }
+    },
+    {
+      "name": "full house exact low",
+      "dice": [
+        1,
+        1,
+        1,
+        2,
+        2
+      ],
+      "category": "full-house",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 7,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 7,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 7
+      }
+    },
+    {
+      "name": "full house exact high",
+      "dice": [
+        6,
+        6,
+        6,
+        5,
+        5
+      ],
+      "category": "full-house",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 28,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 28,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 28
+      }
+    },
+    {
+      "name": "full house rejects five kind",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "full-house",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "full house rejects two pairs",
+      "dice": [
+        2,
+        2,
+        3,
+        3,
+        4
+      ],
+      "category": "full-house",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "small straight exact",
+      "dice": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "category": "small-straight",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 15,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 15,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 15
+      }
+    },
+    {
+      "name": "small straight wrong sequence",
+      "dice": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "category": "small-straight",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "small straight duplicate",
+      "dice": [
+        1,
+        2,
+        3,
+        4,
+        4
+      ],
+      "category": "small-straight",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "large straight exact",
+      "dice": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "category": "large-straight",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 20,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 20,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 20
+      }
+    },
+    {
+      "name": "large straight wrong sequence",
+      "dice": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "category": "large-straight",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "general minimum",
+      "dice": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "category": "general",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 55,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 55,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 55
+      }
+    },
+    {
+      "name": "general maximum",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "general",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 80,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 80,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 80
+      }
+    },
+    {
+      "name": "general miss",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        5
+      ],
+      "category": "general",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    },
+    {
+      "name": "general has no repeat bonus",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "general",
+      "priorState": {
+        "scores": {
+          "chance": 20
+        },
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 80,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 100,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 100
+      }
+    },
+    {
+      "name": "chance minimum",
+      "dice": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "category": "chance",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 5,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 5,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 5
+      }
+    },
+    {
+      "name": "chance maximum",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "chance",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 30,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 30,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 30
+      }
+    },
+    {
+      "name": "zero sacrifice is selectable",
+      "dice": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "category": "general",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
+      }
+    }
+  ]
+}
