@@ -152,14 +152,14 @@ void main() {
         'threes': 0,
         'fours': 0,
         'fives': 0,
-        'sixes': 30,
+        'sixes': 24,
         'three-kind': 0,
         'four-kind': 0,
         'full-house': 0,
         'small-straight': 0,
         'large-straight': 0,
         'yahtzee': 50,
-        'chance': 5,
+        'chance': 6,
       }, bonus: 100);
       expect(game.isComplete, isTrue);
       expect(game.players.single.scoreSheet.repeatedFiveOfAKindBonusTotal, 100);

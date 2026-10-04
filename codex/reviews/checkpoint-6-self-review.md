@@ -33,3 +33,9 @@ The first fix allowed a Classic snapshot with `yahtzee:50`, `full-house:25`, and
 `ClassicYahtzeeRuleset.isValidRepeatedBonusState` now assigns each 100-point award to a distinct scored category by trying all relevant five-of-a-kind faces through its existing `evaluate` method. It searches recipient order, so a forced upper award can enable a later lower joker. Ordinary categories are treated as scored before the Yahtzee category. The search is bounded by the fixed 13-category card and runs only for nonzero repeat bonus snapshots. No Classic rules were copied into `GameSession`, and no shared scoring fixtures were changed.
 
 The restore file passed 13 tests, focused session suite passed 26, rules/conformance suite passed 12, and the full mobile gate passed formatting, analysis, and 41 Flutter tests. Staged `git diff --check` passed. Independent re-review remains pending.
+
+## Final-review Minor test correction
+
+The positive forced-upper-zero restore fixture previously had `sixes:30` and `chance:5`, either of which could receive the 100-point award through another legal path. The fixture now uses `sixes:24` and `chance:6`; neither can score on a repeated five-of-a-kind, while all lower categories remain filled. Thus a zero upper category is the only possible award recipient. A temporary mutation rejecting upper-zero recipients made this exact test fail at `GameSession.restore` with the expected invalid-bonus error; restoring the production code made it pass. No production code was retained from the mutation.
+
+After this test correction, the restore file passed 13 tests, the session suite passed 26, the rules/conformance suite passed 12, and the full mobile gate passed formatting, analysis, and 41 Flutter tests. Staged `git diff --check` passed. Independent review sign-off and push/merge remain outside this local fix.
