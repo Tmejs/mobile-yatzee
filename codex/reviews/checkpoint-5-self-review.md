@@ -13,7 +13,7 @@ Classic review checked first Yahtzee versus repeated Yahtzee, forced matching up
 ## Evidence
 
 - RED: each named `flutter test test/game/rules/{classic_yahtzee_ruleset,scandinavian_yatzy_ruleset,ruleset_registry}_test.dart` exited 1 because its production file was absent.
-- GREEN: `flutter test test/game/rules` passed 13 test groups.
+- GREEN: `flutter test test/game/rules` passed 12 test groups.
 - GREEN: `./tool/verify.sh` passed formatting (21 files, 0 changes), `flutter analyze` (no issues), and all 15 Flutter test groups.
 - JSON parsing passed with `python3 -m json.tool` for each new fixture. A separate standard-library integrity script checked 33 Classic and 27 Scandinavian cases for unique names, valid dice and categories, no used selected category, nonnegative scores, and independently recomputed totals.
 - `git diff --cached --check` passed for the implementation commit.
