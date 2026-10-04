@@ -35,3 +35,10 @@
 - Test-first RED/GREEN evidence recorded for the application root, localization boundary, and platform labels.
 - Task review, scoped re-review, broad final review, and post-merge verification-fix review passed with no remaining Critical, Important, or Minor findings.
 - Native device/simulator builds are deferred to their planned later checkpoints.
+
+## Checkpoint 4 — Polish Generał scoring engine
+
+- Added immutable dice, score-sheet, evaluation, and ruleset contracts for Polish Generał v1.
+- Added a versioned shared JSON fixture schema and 34 Polish Generał conformance cases.
+- Focused Dart tests and the full local mobile gate pass. Java conformance starts with backend Task 10.
+- Independent task review and broad final review passed. The final review's one Minor fixture-coverage finding was fixed and independently re-reviewed with no remaining findings.
