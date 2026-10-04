@@ -135,6 +135,15 @@ final class ClassicYahtzeeRuleset implements Ruleset {
   }
 
   @override
+  bool isValidRepeatedBonusState(ScoreSheet sheet) {
+    final bonus = sheet.repeatedFiveOfAKindBonusTotal;
+    if (bonus == 0) return true;
+    return bonus % 100 == 0 &&
+        sheet.scores['yahtzee'] == 50 &&
+        bonus ~/ 100 <= sheet.scores.length - 1;
+  }
+
+  @override
   ScoreTotals totals(ScoreSheet sheet) {
     final upper = _upper.fold<int>(
       0,

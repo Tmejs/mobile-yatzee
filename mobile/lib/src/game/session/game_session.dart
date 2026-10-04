@@ -1,6 +1,7 @@
 import '../domain/dice.dart';
 import '../domain/score_sheet.dart';
 import '../rules/ruleset_registry.dart';
+import '../rules/score_sheet_validator.dart';
 import 'game_mode.dart';
 import 'player.dart';
 
@@ -78,6 +79,11 @@ final class GameSession {
           player.scoreSheet.scores.keys.any((id) => !categories.contains(id)),
     )) {
       throw ArgumentError('Score sheet contains an unknown category');
+    }
+    if (players.any(
+      (player) => !ScoreSheetValidator.accepts(ruleset, player.scoreSheet),
+    )) {
+      throw ArgumentError('Score sheet has an impossible score or bonus');
     }
     if (activePlayerIndex < 0 ||
         activePlayerIndex >= count ||
