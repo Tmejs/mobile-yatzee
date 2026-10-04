@@ -25,7 +25,7 @@ void main() {
         ),
       ],
       activePlayerIndex: 0,
-      round: scores.length + 1,
+      round: scores.length == 13 ? 13 : scores.length + 1,
       dice: null,
       held: const [false, false, false, false, false],
       rollCount: 0,
@@ -92,4 +92,91 @@ void main() {
     expect(game.round, 3);
     expect(game.totalsFor(0).finalTotal, 180);
   });
+
+  test(
+    'Classic bonus cannot be assigned to joker without a matching upper',
+    () {
+      expect(
+        () => restore('classic-yahtzee', {
+          'yahtzee': 50,
+          'full-house': 25,
+        }, bonus: 100),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test('Classic forced upper bonus requires five matching dice score', () {
+    expect(
+      () =>
+          restore('classic-yahtzee', {'yahtzee': 50, 'sixes': 24}, bonus: 100),
+      throwsArgumentError,
+    );
+  });
+
+  test('Classic lower repeat must have score from a five-of-a-kind', () {
+    expect(
+      () => restore('classic-yahtzee', {
+        'yahtzee': 50,
+        'sixes': 24,
+        'three-kind': 29,
+      }, bonus: 100),
+      throwsArgumentError,
+    );
+  });
+
+  test('Classic filled upper can enable a lower joker bonus', () {
+    final game = restore('classic-yahtzee', {
+      'yahtzee': 50,
+      'sixes': 30,
+      'full-house': 25,
+    }, bonus: 100);
+    expect(game.players.single.scoreSheet.repeatedFiveOfAKindBonusTotal, 100);
+  });
+
+  test('Classic forced upper bonus can establish a later lower joker', () {
+    final game = restore('classic-yahtzee', {
+      'yahtzee': 50,
+      'sixes': 30,
+      'full-house': 25,
+    }, bonus: 200);
+    expect(game.players.single.scoreSheet.repeatedFiveOfAKindBonusTotal, 200);
+  });
+
+  test(
+    'Classic all filled lower categories permit a forced upper zero bonus',
+    () {
+      final game = restore('classic-yahtzee', {
+        'ones': 0,
+        'twos': 0,
+        'threes': 0,
+        'fours': 0,
+        'fives': 0,
+        'sixes': 30,
+        'three-kind': 0,
+        'four-kind': 0,
+        'full-house': 0,
+        'small-straight': 0,
+        'large-straight': 0,
+        'yahtzee': 50,
+        'chance': 5,
+      }, bonus: 100);
+      expect(game.isComplete, isTrue);
+      expect(game.players.single.scoreSheet.repeatedFiveOfAKindBonusTotal, 100);
+    },
+  );
+
+  test(
+    'Classic zero upper cannot receive repeat bonus while lower remains open',
+    () {
+      expect(
+        () => restore('classic-yahtzee', {
+          'yahtzee': 50,
+          'sixes': 24,
+          'ones': 0,
+        }, bonus: 100),
+        throwsArgumentError,
+      );
+    },
+  );
 }

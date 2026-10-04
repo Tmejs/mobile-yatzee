@@ -134,13 +134,80 @@ final class ClassicYahtzeeRuleset implements Ruleset {
     return false;
   }
 
+  static final List<DiceRoll> _fiveKindRolls = List.generate(
+    6,
+    (index) => DiceRoll(List.filled(5, index + 1)),
+    growable: false,
+  );
+
   @override
   bool isValidRepeatedBonusState(ScoreSheet sheet) {
     final bonus = sheet.repeatedFiveOfAKindBonusTotal;
     if (bonus == 0) return true;
-    return bonus % 100 == 0 &&
-        sheet.scores['yahtzee'] == 50 &&
-        bonus ~/ 100 <= sheet.scores.length - 1;
+    final awards = bonus ~/ 100;
+    if (bonus % 100 != 0 ||
+        sheet.scores['yahtzee'] != 50 ||
+        awards > sheet.scores.length - 1) {
+      return false;
+    }
+
+    final candidates = [
+      for (final category in [..._upper, ..._lower])
+        if (category != 'yahtzee' && sheet.scores.containsKey(category))
+          category,
+    ];
+    // Categories not awarded a repeat bonus can be scored before Yahtzee.
+    // For each possible set of award recipients, evaluate every legal
+    // five-of-a-kind placement in turn order against the actual rules.
+    bool chooseRecipients(int start, List<CategoryId> recipients) {
+      if (recipients.length == awards) {
+        final ordinary = {
+          for (final entry in sheet.scores.entries)
+            if (!recipients.contains(entry.key)) entry.key: entry.value,
+        };
+        final dead = <int>{};
+        bool placeAwards(int remaining, ScoreSheet current) {
+          if (remaining == 0) return true;
+          if (!dead.add(remaining)) return false;
+          for (var index = 0; index < recipients.length; index++) {
+            if (remaining & (1 << index) == 0) continue;
+            final category = recipients[index];
+            for (final roll in _fiveKindRolls) {
+              final result = evaluate(category, roll, current);
+              if (!result.selectable ||
+                  result.bonusDelta != 100 ||
+                  result.score != sheet.scores[category]) {
+                continue;
+              }
+              if (placeAwards(
+                remaining & ~(1 << index),
+                current.withScore(category, result.score, bonusDelta: 100),
+              )) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        return placeAwards(
+          (1 << recipients.length) - 1,
+          ScoreSheet(scores: ordinary),
+        );
+      }
+      for (
+        var index = start;
+        index <= candidates.length - (awards - recipients.length);
+        index++
+      ) {
+        if (chooseRecipients(index + 1, [...recipients, candidates[index]])) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    return chooseRecipients(0, const []);
   }
 
   @override
