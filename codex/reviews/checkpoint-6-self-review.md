@@ -38,4 +38,8 @@ The restore file passed 13 tests, focused session suite passed 26, rules/conform
 
 The positive forced-upper-zero restore fixture previously had `sixes:30` and `chance:5`, either of which could receive the 100-point award through another legal path. The fixture now uses `sixes:24` and `chance:6`; neither can score on a repeated five-of-a-kind, while all lower categories remain filled. Thus a zero upper category is the only possible award recipient. A temporary mutation rejecting upper-zero recipients made this exact test fail at `GameSession.restore` with the expected invalid-bonus error; restoring the production code made it pass. No production code was retained from the mutation.
 
-After this test correction, the restore file passed 13 tests, the session suite passed 26, the rules/conformance suite passed 12, and the full mobile gate passed formatting, analysis, and 41 Flutter tests. Staged `git diff --check` passed. Independent review sign-off and push/merge remain outside this local fix.
+After this test correction, the restore file passed 13 tests, the session suite passed 26, the rules/conformance suite passed 12, and the full mobile gate passed formatting, analysis, and 41 Flutter tests. Staged `git diff --check` passed.
+
+## Independent review outcome
+
+The task review found one Important restored-scorecard validation issue. Fix round 1 added ruleset-derived score validation but its scoped re-review found that Classic bonus histories still needed forced-placement feasibility. Fix round 2 added the bounded ruleset-owned history search; scoped re-review passed specification and task quality with no Critical or Important findings. Broad final review found no production defect and one Minor test-isolation gap. Commit `d835451` corrected that test and mutation-proved the forced-upper-zero branch. Final scoped re-review reported no remaining Critical, Important, or Minor findings and approved the checkpoint for merge.
