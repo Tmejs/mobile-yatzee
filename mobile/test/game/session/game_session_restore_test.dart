@@ -11,6 +11,7 @@ void main() {
     int bonus = 0,
   }) {
     return GameSession.restore(
+      gameId: 'session-test',
       rulesetId: rulesetId,
       rulesetVersion: 1,
       mode: GameMode.solo,

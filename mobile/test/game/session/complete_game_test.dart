@@ -25,6 +25,7 @@ void main() {
   ]) {
     test('completes every $id solo category exactly once', () {
       var game = GameSession.start(
+        gameId: 'session-test',
         rulesetId: id,
         rulesetVersion: 1,
         mode: GameMode.solo,
@@ -86,6 +87,7 @@ void main() {
 
   test('four-player game rotates in order, awards upper bonus, and stably orders ties', () {
     var game = GameSession.start(
+      gameId: 'session-test',
       rulesetId: 'polish-general',
       rulesetVersion: 1,
       mode: GameMode.passAndPlay,
@@ -142,6 +144,7 @@ void main() {
     () {
       final players = [Player(id: 'a', name: 'A')];
       final game = GameSession.start(
+        gameId: 'session-test',
         rulesetId: 'polish-general',
         rulesetVersion: 1,
         mode: GameMode.solo,
@@ -152,6 +155,7 @@ void main() {
       expect(() => game.held[0] = true, throwsUnsupportedError);
       expect(
         () => GameSession.restore(
+          gameId: 'session-test',
           rulesetId: 'polish-general',
           rulesetVersion: 1,
           mode: GameMode.solo,
@@ -169,6 +173,7 @@ void main() {
 
   test('two tied finishers remain co-winners in player order', () {
     var game = GameSession.start(
+      gameId: 'session-test',
       rulesetId: 'polish-general',
       rulesetVersion: 1,
       mode: GameMode.passAndPlay,
@@ -195,6 +200,7 @@ void main() {
 
   test('three-player pass-and-play starts with stable order', () {
     final game = GameSession.start(
+      gameId: 'session-test',
       rulesetId: 'scandinavian-yatzy',
       rulesetVersion: 1,
       mode: GameMode.passAndPlay,

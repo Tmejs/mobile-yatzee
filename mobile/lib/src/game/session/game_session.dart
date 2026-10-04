@@ -20,6 +20,8 @@ final class GameStanding {
 
 final class GameSession {
   GameSession._({
+    required this.gameId,
+    required this.rankedIntent,
     required this.rulesetId,
     required this.rulesetVersion,
     required this.mode,
@@ -34,11 +36,15 @@ final class GameSession {
        held = List.unmodifiable(held);
 
   factory GameSession.start({
+    required String gameId,
+    bool rankedIntent = false,
     required String rulesetId,
     required int rulesetVersion,
     required GameMode mode,
     required List<Player> players,
   }) => GameSession.restore(
+    gameId: gameId,
+    rankedIntent: rankedIntent,
     rulesetId: rulesetId,
     rulesetVersion: rulesetVersion,
     mode: mode,
@@ -52,6 +58,8 @@ final class GameSession {
 
   /// Rebuilds and validates a versioned snapshot without carrying services in state.
   factory GameSession.restore({
+    required String gameId,
+    bool rankedIntent = false,
     required String rulesetId,
     required int rulesetVersion,
     required GameMode mode,
@@ -62,6 +70,9 @@ final class GameSession {
     required List<bool> held,
     required int rollCount,
   }) {
+    if (gameId.trim().isEmpty) {
+      throw ArgumentError('Game ID must not be blank');
+    }
     final ruleset = RulesetRegistry().require(rulesetId, rulesetVersion);
     final count = players.length;
     if ((mode == GameMode.solo && count != 1) ||
@@ -115,6 +126,8 @@ final class GameSession {
       }
     }
     return GameSession._(
+      gameId: gameId,
+      rankedIntent: rankedIntent,
       rulesetId: rulesetId,
       rulesetVersion: rulesetVersion,
       mode: mode,
@@ -128,6 +141,8 @@ final class GameSession {
   }
 
   final String rulesetId;
+  final String gameId;
+  final bool rankedIntent;
   final int rulesetVersion;
   final GameMode mode;
   final List<Player> players;

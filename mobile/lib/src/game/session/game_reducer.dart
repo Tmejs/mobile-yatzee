@@ -92,6 +92,8 @@ final class GameReducer {
         }
     }
     return GameSession.restore(
+      gameId: state.gameId,
+      rankedIntent: state.rankedIntent,
       rulesetId: state.rulesetId,
       rulesetVersion: state.rulesetVersion,
       mode: state.mode,
