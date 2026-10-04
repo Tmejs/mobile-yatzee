@@ -795,7 +795,7 @@
       }
     },
     {
-      "name": "general has no repeat bonus",
+      "name": "repeat general in four-kind has no bonus",
       "dice": [
         6,
         6,
@@ -803,23 +803,23 @@
         6,
         6
       ],
-      "category": "general",
+      "category": "four-kind",
       "priorState": {
         "scores": {
-          "chance": 20
+          "general": 80
         },
         "repeatedFiveOfAKindBonusTotal": 0
       },
       "selectable": true,
       "valid": true,
-      "score": 80,
+      "score": 24,
       "bonusDelta": 0,
       "expectedTotals": {
         "upperSubtotal": 0,
         "upperBonus": 0,
-        "lowerSubtotal": 100,
+        "lowerSubtotal": 104,
         "repeatedFiveOfAKindBonusTotal": 0,
-        "finalTotal": 100
+        "finalTotal": 104
       }
     },
     {
