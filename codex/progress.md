@@ -43,9 +43,10 @@
 - Focused Dart tests and the full local mobile gate pass. Java conformance starts with backend Task 10.
 - Independent task review and broad final review passed. The final review's one Minor fixture-coverage finding was fixed and independently re-reviewed with no remaining findings.
 
-## Checkpoint 5 — additional rulesets (local implementation)
+## Checkpoint 5 — additional rulesets
 
 - Added Classic Yahtzee v1 and Scandinavian Yatzy v1 scoring engines and an immutable versioned registry for the three v1 rulesets.
 - Added 35 Classic and 27 Scandinavian shared JSON conformance cases. The existing 34 Polish cases remain unchanged.
 - Captured RED runs for all three new test files before implementation; focused rules tests, the complete mobile gate, JSON integrity checks, and staged `git diff --check` passed.
-- Independent task review found one Important and one Minor fixture-coverage gap; both have been fixed with focused mutation evidence. Re-review, push, merge, and remote synchronization remain pending, so this checkpoint is not complete.
+- Independent task review found one Important and one Minor fixture-coverage gap; both were fixed with focused mutation evidence and passed scoped re-review.
+- Broad final review and its documentation-fix re-review passed with no remaining Critical, Important, or Minor findings.

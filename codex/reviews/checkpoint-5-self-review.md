@@ -8,7 +8,7 @@ Reviewed every new file: both ruleset implementations, registry, three test file
 
 Classic review checked first Yahtzee versus repeated Yahtzee, forced matching upper, rejection of other categories while matching upper is open, lower category choice after it is used, the three joker fixed scores, all-lower-filled forced zero in an unused upper category, accumulation of 100-point repeat bonuses, and Yahtzee-box-zero behavior. `selectable: false` is distinct from a selectable zero sacrifice. Scandinavian review checked highest pair, distinct pairs, exact three/four dice in kind scores, exact full house, fixed straights, upper bonus, and absence of repeat policy. Fixture totals and prior-state arithmetic were checked independently of the Dart scoring code.
 
-**Findings:** No Critical or Important findings in self-review. Independent review is still required by `AGENTS.md` before this branch may be pushed.
+**Findings:** No Critical or Important findings in self-review.
 
 ## Evidence
 
@@ -18,3 +18,7 @@ Classic review checked first Yahtzee versus repeated Yahtzee, forced matching up
 - JSON parsing passed with `python3 -m json.tool` for each new fixture. A separate standard-library integrity script checked 33 Classic and 27 Scandinavian cases for unique names, valid dice and categories, no used selected category, nonnegative scores, and independently recomputed totals.
 - `git diff --cached --check` passed for the implementation commit.
 - Java conformance is not applicable until backend Task 10; the JSON fixtures remain language-neutral.
+
+## Independent review
+
+The independent task review initially found one Important and one Minor fixture-coverage gap. Both were addressed in `baa2077` and the scoped re-review passed specification compliance and approved task quality with no new breakage. The broad final review found no product or fixture defects and one Minor evidence-count mismatch. Commit `8980aad` corrected both committed records from 13 focused tests to 12; the final scoped re-review marked the finding addressed and reported no remaining Critical, Important, or Minor findings. The checkpoint was approved for merge.
