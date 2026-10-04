@@ -301,6 +301,32 @@
       }
     },
     {
+      "name": "small straight high run three through six",
+      "dice": [
+        3,
+        4,
+        5,
+        6,
+        6
+      ],
+      "category": "small-straight",
+      "priorState": {
+        "scores": {},
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": true,
+      "score": 30,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 30,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 30
+      }
+    },
+    {
       "name": "small straight miss",
       "dice": [
         1,
@@ -862,6 +888,34 @@
         "lowerSubtotal": 0,
         "repeatedFiveOfAKindBonusTotal": 0,
         "finalTotal": 30
+      }
+    },
+    {
+      "name": "yahtzee box zero allows lower sacrifice while matching upper is open",
+      "dice": [
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "category": "full-house",
+      "priorState": {
+        "scores": {
+          "yahtzee": 0
+        },
+        "repeatedFiveOfAKindBonusTotal": 0
+      },
+      "selectable": true,
+      "valid": false,
+      "score": 0,
+      "bonusDelta": 0,
+      "expectedTotals": {
+        "upperSubtotal": 0,
+        "upperBonus": 0,
+        "lowerSubtotal": 0,
+        "repeatedFiveOfAKindBonusTotal": 0,
+        "finalTotal": 0
       }
     },
     {
