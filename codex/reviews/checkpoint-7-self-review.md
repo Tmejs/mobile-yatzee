@@ -30,3 +30,14 @@ Two Important findings were fixed with regression tests. Independent review is s
 ## Scope limits
 
 The app has no playable UI yet. The controller receives an initial or loaded session through an overridable provider; UI wiring and game creation belong to a later checkpoint.
+
+## Task-review fix round 1
+
+Independent task review identified two Important controller races in the preceding implementation. Both were reproduced with controlled regression tests before the fix:
+
+1. A synchronous Riverpod success listener calling `apply(ToggleHold(0))` after a roll saw the old in-flight future. RED: one repository save instead of two, leaving the second transition pending. The controller now releases attempt ownership before publishing success. GREEN: two saves, the held die appears in both published state and the repository.
+2. Replacing the initial session while its save was pending retained the old pending transition and allowed its delayed completion to affect the new session. RED: both delayed-success and delayed-failure cases rejected B's command because A remained pending. Each build now invalidates the prior generation and pending attempt; completion checks generation, pending identity, and provider mounting before publishing either success or error. GREEN: A's delayed outcome leaves B's pending and public state intact, and B persists successfully.
+
+Write ownership is reserved before the asynchronous repository call begins. On success, the controller clears the completed pending transition and in-flight future before notifying listeners. On failure it clears only the in-flight future, retaining exactly one pending transition for retry. A stale attempt does not clear a newer session's pending transition or publish a result.
+
+The final `flutter test test/local test/game/application` run passed 17 tests. The final `./tool/verify.sh` run reported 45 files formatted with zero changes, no analysis issues, and 58 passing tests. `git diff --check` passed. No schema changed, so code generation was not rerun. Independent re-review, push, and merge remain pending.
