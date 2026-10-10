@@ -57,3 +57,11 @@
 - Focused session tests cover all three complete solo scorecards, complete four-player and tied two-player games, rejected commands, bonus totals, and stable standings.
 - The focused session suite (26 tests), rules suite (12 tests), full mobile gate (41 tests), formatting, and analysis pass locally after two review fixes for restored scorecard validation, including Classic repeat-bonus placement feasibility.
 - Task review, both scoped re-reviews, broad final review, and the final test-fix re-review passed with no remaining Critical, Important, or Minor findings.
+
+## Checkpoint 7 — local persistence and autosave
+
+- Added Drift schema v1 for active games, completed games, and preferences, with generated schema code committed.
+- Versioned snapshots retain the game ID, ranked intent, ruleset, mode, players and scores, turn position, dice, and holds. Completion writes immutable history and removes the active row in one transaction.
+- Riverpod game controller persists each successful command before publishing it, retains a failed transition for explicit retry, and coalesces overlapping retry calls. The repository exposes active/history streams and a latest-ten solo average scoped to ruleset version. Completion instants retain microsecond precision for ordering.
+- RED runs were captured before implementation and for two review fixes. The focused local/application suite (14 tests), complete mobile gate (55 tests), formatting, analysis, and diff check passed. A second code-generation run wrote zero outputs and kept the generated database file hash unchanged.
+- Handoff self-review found and fixed two Important issues: overlapping retries could publish an error after a successful save, and Drift's default timestamp mapping lost subsecond precision. Independent review, push, merge, and remote synchronization remain pending with the checkpoint owner.
