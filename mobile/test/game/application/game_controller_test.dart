@@ -91,8 +91,47 @@ final class SecondSaveFailsRepository implements GameRepository {
   );
 }
 
-GameSession initial({GameMode mode = GameMode.solo}) => GameSession.start(
-  gameId: 'controller-game',
+final class GatedSaveRepository implements GameRepository {
+  GatedSaveRepository(this.inner, this.gates, {this.failures = const {}});
+  final GameRepository inner;
+  final Map<String, Completer<void>> gates;
+  final Set<String> failures;
+  final List<String> saves = [];
+
+  @override
+  Future<void> saveActive(GameSession session) async {
+    saves.add(session.gameId);
+    await gates[session.gameId]?.future;
+    if (failures.contains(session.gameId)) {
+      throw StateError('simulated ${session.gameId} failure');
+    }
+    await inner.saveActive(session);
+  }
+
+  @override
+  Future<GameSession?> loadActive(String gameId) => inner.loadActive(gameId);
+  @override
+  Stream<List<GameSession>> watchActive() => inner.watchActive();
+  @override
+  Future<void> complete(GameSession session) => inner.complete(session);
+  @override
+  Stream<List<CompletedGame>> watchCompleted({String? rulesetId}) =>
+      inner.watchCompleted(rulesetId: rulesetId);
+  @override
+  Future<double?> latestTenSoloAverage({
+    required String rulesetId,
+    required int rulesetVersion,
+  }) => inner.latestTenSoloAverage(
+    rulesetId: rulesetId,
+    rulesetVersion: rulesetVersion,
+  );
+}
+
+GameSession initial({
+  GameMode mode = GameMode.solo,
+  String gameId = 'controller-game',
+}) => GameSession.start(
+  gameId: gameId,
   rankedIntent: true,
   rulesetId: 'polish-general',
   rulesetVersion: 1,
@@ -341,4 +380,118 @@ void main() {
       }
     },
   );
+
+  test('success listener can persist the next command', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final repository = GatedSaveRepository(DriftGameRepository(db), {});
+    final container = ProviderContainer(
+      overrides: [
+        gameRepositoryProvider.overrideWithValue(repository),
+        initialGameSessionProvider.overrideWithValue(initial()),
+        diceRollerProvider.overrideWithValue(const FixedRoller(6)),
+      ],
+    );
+    try {
+      final controller = container.read(gameControllerProvider.notifier);
+      Future<void>? second;
+      var requested = false;
+      final subscription = container.listen(gameControllerProvider, (
+        previous,
+        next,
+      ) {
+        if (!requested && next.hasValue && next.requireValue.rollCount == 1) {
+          requested = true;
+          second = controller.apply(const ToggleHold(0));
+        }
+      });
+      try {
+        await controller.apply(const RollDice());
+        expect(requested, true);
+        await second;
+        expect(repository.saves, ['controller-game', 'controller-game']);
+        expect(
+          container.read(gameControllerProvider).requireValue.held[0],
+          true,
+        );
+        expect((await repository.loadActive('controller-game'))?.held[0], true);
+      } finally {
+        subscription.close();
+      }
+    } finally {
+      container.dispose();
+      await db.close();
+    }
+  });
+
+  for (final failOldSave in [false, true]) {
+    test(
+      'replacing the initial session ignores delayed ${failOldSave ? 'failure' : 'success'} from the old session',
+      () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        final aGate = Completer<void>();
+        final bGate = Completer<void>();
+        final repository = GatedSaveRepository(DriftGameRepository(db), {
+          'a': aGate,
+          'b': bGate,
+        }, failures: failOldSave ? {'a'} : {});
+        final container = ProviderContainer(
+          overrides: [
+            gameRepositoryProvider.overrideWithValue(repository),
+            initialGameSessionProvider.overrideWithValue(initial(gameId: 'a')),
+            diceRollerProvider.overrideWithValue(const FixedRoller(6)),
+          ],
+        );
+        try {
+          final oldController = container.read(gameControllerProvider.notifier);
+          final oldSave = oldController.apply(const RollDice());
+          await Future<void>.value();
+          expect(repository.saves, ['a']);
+          expect(oldController.pending?.gameId, 'a');
+
+          container.updateOverrides([
+            gameRepositoryProvider.overrideWithValue(repository),
+            initialGameSessionProvider.overrideWithValue(initial(gameId: 'b')),
+            diceRollerProvider.overrideWithValue(const FixedRoller(6)),
+          ]);
+          await container.pump();
+          final controller = container.read(gameControllerProvider.notifier);
+          expect(
+            container.read(gameControllerProvider).requireValue.gameId,
+            'b',
+          );
+          final newSave = controller.apply(const RollDice());
+          expect(controller.pending?.gameId, 'b');
+
+          aGate.complete();
+          await oldSave;
+          expect(
+            container.read(gameControllerProvider).requireValue.gameId,
+            'b',
+          );
+          expect(
+            container.read(gameControllerProvider).requireValue.rollCount,
+            0,
+          );
+          expect(controller.pending?.gameId, 'b');
+          expect(controller.pending?.rollCount, 1);
+
+          bGate.complete();
+          await newSave;
+          expect(repository.saves, ['a', 'b']);
+          expect(
+            container.read(gameControllerProvider).requireValue.gameId,
+            'b',
+          );
+          expect(
+            container.read(gameControllerProvider).requireValue.rollCount,
+            1,
+          );
+          expect((await repository.loadActive('b'))?.rollCount, 1);
+        } finally {
+          container.dispose();
+          await db.close();
+        }
+      },
+    );
+  }
 }

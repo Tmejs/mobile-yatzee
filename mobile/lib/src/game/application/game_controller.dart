@@ -8,11 +8,22 @@ import 'providers.dart';
 final class GameController extends Notifier<AsyncValue<GameSession>> {
   GameSession? _pending;
   Future<void>? _persistenceInFlight;
+  int _generation = 0;
   late GameSession _lastPublished;
   final GameReducer _reducer = GameReducer();
 
   @override
   AsyncValue<GameSession> build() {
+    final generation = ++_generation;
+    _pending = null;
+    _persistenceInFlight = null;
+    ref.onDispose(() {
+      if (_generation == generation) {
+        _generation++;
+        _pending = null;
+        _persistenceInFlight = null;
+      }
+    });
     final initial = ref.watch(initialGameSessionProvider);
     _lastPublished = initial;
     return AsyncData(initial);
@@ -42,16 +53,19 @@ final class GameController extends Notifier<AsyncValue<GameSession>> {
     if (ongoing != null) return ongoing;
     final next = _pending;
     if (next == null) return Future.error(StateError('No pending transition'));
-    final attempt = _persistPending(next);
+    final generation = _generation;
+    final attempt = Future<void>.microtask(
+      () => _persistPending(next, generation),
+    );
     _persistenceInFlight = attempt;
-    return attempt.whenComplete(() {
-      if (identical(_persistenceInFlight, attempt)) {
-        _persistenceInFlight = null;
-      }
-    });
+    return attempt;
   }
 
-  Future<void> _persistPending(GameSession next) async {
+  bool _ownsPending(GameSession next, int generation) =>
+      ref.mounted && generation == _generation && identical(_pending, next);
+
+  Future<void> _persistPending(GameSession next, int generation) async {
+    if (!_ownsPending(next, generation)) return;
     try {
       final repository = ref.read(gameRepositoryProvider);
       if (next.isComplete) {
@@ -59,11 +73,16 @@ final class GameController extends Notifier<AsyncValue<GameSession>> {
       } else {
         await repository.saveActive(next);
       }
-      _lastPublished = next;
-      _pending = null;
-      state = AsyncData(next);
     } catch (error, stackTrace) {
+      if (!_ownsPending(next, generation)) return;
+      _persistenceInFlight = null;
       state = AsyncError(error, stackTrace);
+      return;
     }
+    if (!_ownsPending(next, generation)) return;
+    _lastPublished = next;
+    _pending = null;
+    _persistenceInFlight = null;
+    state = AsyncData(next);
   }
 }
