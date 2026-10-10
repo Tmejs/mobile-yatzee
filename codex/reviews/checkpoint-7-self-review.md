@@ -4,7 +4,7 @@ Reviewed implementation commit `9c2bbb6` and the handoff fixes against the Task 
 
 ## Findings
 
-Two Important findings were fixed with regression tests. Independent review is still required by the repository gate.
+Two Important findings were fixed with regression tests. The later independent task and broad reviews are recorded below.
 
 1. Overlapping `retryPersistence()` calls could write the same pending transition twice. If one save succeeded and the other failed, the later failure could replace the successful public state with `AsyncError`. A failing regression reproduced two writes; the controller now shares one in-flight persistence attempt, and the test observes one write and a successful state.
 2. Drift's default `DateTimeColumn` stores Unix seconds, so two completions within one second sorted by game ID rather than actual completion time. A failing regression reproduced the wrong order; the schema now stores UTC epoch microseconds as an integer. History and latest-ten queries sort by that value, and the test checks exact timestamp round trips.
@@ -40,4 +40,10 @@ Independent task review identified two Important controller races in the precedi
 
 Write ownership is reserved before the asynchronous repository call begins. On success, the controller clears the completed pending transition and in-flight future before notifying listeners. On failure it clears only the in-flight future, retaining exactly one pending transition for retry. A stale attempt does not clear a newer session's pending transition or publish a result.
 
-The final `flutter test test/local test/game/application` run passed 17 tests. The final `./tool/verify.sh` run reported 45 files formatted with zero changes, no analysis issues, and 58 passing tests. `git diff --check` passed. No schema changed, so code generation was not rerun. Independent re-review, push, and merge remain pending.
+The final `flutter test test/local test/game/application` run passed 17 tests. The final `./tool/verify.sh` run reported 45 files formatted with zero changes, no analysis issues, and 58 passing tests. `git diff --check` passed. No schema changed, so code generation was not rerun.
+
+## Independent review results
+
+- Scoped re-review approved both controller race fixes with no findings. It passed 19 repository tests plus three temporary lifecycle checks covering disposal during delayed success/failure and synchronous error-listener retry.
+- Broad final review covered the complete checkpoint diff, repeated the 17 focused tests and 58-test full gate, and found no Critical or Important findings. Its only Minor finding was stale review-status wording in the checkpoint evidence; this documentation update resolves it.
+- Push, merge, and remote synchronization remain pending with the checkpoint owner.
