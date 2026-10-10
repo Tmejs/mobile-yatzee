@@ -18,6 +18,7 @@ final class QueueRoller implements DiceRoller {
 void main() {
   final reducer = GameReducer();
   GameSession solo({String ruleset = 'polish-general'}) => GameSession.start(
+    gameId: 'session-test',
     rulesetId: ruleset,
     rulesetVersion: 1,
     mode: GameMode.solo,
@@ -27,6 +28,7 @@ void main() {
   test('validates mode, identities, and ruleset', () {
     expect(
       () => GameSession.start(
+        gameId: 'session-test',
         rulesetId: 'polish-general',
         rulesetVersion: 1,
         mode: GameMode.solo,
@@ -36,6 +38,7 @@ void main() {
     );
     expect(
       () => GameSession.start(
+        gameId: 'session-test',
         rulesetId: 'polish-general',
         rulesetVersion: 1,
         mode: GameMode.passAndPlay,
@@ -45,6 +48,7 @@ void main() {
     );
     expect(
       () => GameSession.start(
+        gameId: 'session-test',
         rulesetId: 'polish-general',
         rulesetVersion: 1,
         mode: GameMode.passAndPlay,
@@ -54,6 +58,7 @@ void main() {
     );
     expect(
       () => GameSession.start(
+        gameId: 'session-test',
         rulesetId: 'polish-general',
         rulesetVersion: 1,
         mode: GameMode.passAndPlay,
