@@ -335,15 +335,15 @@ class $CompletedGamesTable extends CompletedGames
       'CHECK ("ranked_intent" IN (0, 1))',
     ),
   );
-  static const VerificationMeta _completedAtMeta = const VerificationMeta(
-    'completedAt',
+  static const VerificationMeta _completedAtMicrosMeta = const VerificationMeta(
+    'completedAtMicros',
   );
   @override
-  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
-    'completed_at',
+  late final GeneratedColumn<int> completedAtMicros = GeneratedColumn<int>(
+    'completed_at_micros',
     aliasedName,
     false,
-    type: DriftSqlType.dateTime,
+    type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
   static const VerificationMeta _playersJsonMeta = const VerificationMeta(
@@ -364,7 +364,7 @@ class $CompletedGamesTable extends CompletedGames
     rulesetId,
     rulesetVersion,
     rankedIntent,
-    completedAt,
+    completedAtMicros,
     playersJson,
   ];
   @override
@@ -425,16 +425,16 @@ class $CompletedGamesTable extends CompletedGames
     } else if (isInserting) {
       context.missing(_rankedIntentMeta);
     }
-    if (data.containsKey('completed_at')) {
+    if (data.containsKey('completed_at_micros')) {
       context.handle(
-        _completedAtMeta,
-        completedAt.isAcceptableOrUnknown(
-          data['completed_at']!,
-          _completedAtMeta,
+        _completedAtMicrosMeta,
+        completedAtMicros.isAcceptableOrUnknown(
+          data['completed_at_micros']!,
+          _completedAtMicrosMeta,
         ),
       );
     } else if (isInserting) {
-      context.missing(_completedAtMeta);
+      context.missing(_completedAtMicrosMeta);
     }
     if (data.containsKey('players_json')) {
       context.handle(
@@ -476,9 +476,9 @@ class $CompletedGamesTable extends CompletedGames
         DriftSqlType.bool,
         data['${effectivePrefix}ranked_intent'],
       )!,
-      completedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}completed_at'],
+      completedAtMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completed_at_micros'],
       )!,
       playersJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -500,7 +500,7 @@ class CompletedGameRow extends DataClass
   final String rulesetId;
   final int rulesetVersion;
   final bool rankedIntent;
-  final DateTime completedAt;
+  final int completedAtMicros;
   final String playersJson;
   const CompletedGameRow({
     required this.gameId,
@@ -508,7 +508,7 @@ class CompletedGameRow extends DataClass
     required this.rulesetId,
     required this.rulesetVersion,
     required this.rankedIntent,
-    required this.completedAt,
+    required this.completedAtMicros,
     required this.playersJson,
   });
   @override
@@ -519,7 +519,7 @@ class CompletedGameRow extends DataClass
     map['ruleset_id'] = Variable<String>(rulesetId);
     map['ruleset_version'] = Variable<int>(rulesetVersion);
     map['ranked_intent'] = Variable<bool>(rankedIntent);
-    map['completed_at'] = Variable<DateTime>(completedAt);
+    map['completed_at_micros'] = Variable<int>(completedAtMicros);
     map['players_json'] = Variable<String>(playersJson);
     return map;
   }
@@ -531,7 +531,7 @@ class CompletedGameRow extends DataClass
       rulesetId: Value(rulesetId),
       rulesetVersion: Value(rulesetVersion),
       rankedIntent: Value(rankedIntent),
-      completedAt: Value(completedAt),
+      completedAtMicros: Value(completedAtMicros),
       playersJson: Value(playersJson),
     );
   }
@@ -547,7 +547,7 @@ class CompletedGameRow extends DataClass
       rulesetId: serializer.fromJson<String>(json['rulesetId']),
       rulesetVersion: serializer.fromJson<int>(json['rulesetVersion']),
       rankedIntent: serializer.fromJson<bool>(json['rankedIntent']),
-      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      completedAtMicros: serializer.fromJson<int>(json['completedAtMicros']),
       playersJson: serializer.fromJson<String>(json['playersJson']),
     );
   }
@@ -560,7 +560,7 @@ class CompletedGameRow extends DataClass
       'rulesetId': serializer.toJson<String>(rulesetId),
       'rulesetVersion': serializer.toJson<int>(rulesetVersion),
       'rankedIntent': serializer.toJson<bool>(rankedIntent),
-      'completedAt': serializer.toJson<DateTime>(completedAt),
+      'completedAtMicros': serializer.toJson<int>(completedAtMicros),
       'playersJson': serializer.toJson<String>(playersJson),
     };
   }
@@ -571,7 +571,7 @@ class CompletedGameRow extends DataClass
     String? rulesetId,
     int? rulesetVersion,
     bool? rankedIntent,
-    DateTime? completedAt,
+    int? completedAtMicros,
     String? playersJson,
   }) => CompletedGameRow(
     gameId: gameId ?? this.gameId,
@@ -579,7 +579,7 @@ class CompletedGameRow extends DataClass
     rulesetId: rulesetId ?? this.rulesetId,
     rulesetVersion: rulesetVersion ?? this.rulesetVersion,
     rankedIntent: rankedIntent ?? this.rankedIntent,
-    completedAt: completedAt ?? this.completedAt,
+    completedAtMicros: completedAtMicros ?? this.completedAtMicros,
     playersJson: playersJson ?? this.playersJson,
   );
   CompletedGameRow copyWithCompanion(CompletedGamesCompanion data) {
@@ -593,9 +593,9 @@ class CompletedGameRow extends DataClass
       rankedIntent: data.rankedIntent.present
           ? data.rankedIntent.value
           : this.rankedIntent,
-      completedAt: data.completedAt.present
-          ? data.completedAt.value
-          : this.completedAt,
+      completedAtMicros: data.completedAtMicros.present
+          ? data.completedAtMicros.value
+          : this.completedAtMicros,
       playersJson: data.playersJson.present
           ? data.playersJson.value
           : this.playersJson,
@@ -610,7 +610,7 @@ class CompletedGameRow extends DataClass
           ..write('rulesetId: $rulesetId, ')
           ..write('rulesetVersion: $rulesetVersion, ')
           ..write('rankedIntent: $rankedIntent, ')
-          ..write('completedAt: $completedAt, ')
+          ..write('completedAtMicros: $completedAtMicros, ')
           ..write('playersJson: $playersJson')
           ..write(')'))
         .toString();
@@ -623,7 +623,7 @@ class CompletedGameRow extends DataClass
     rulesetId,
     rulesetVersion,
     rankedIntent,
-    completedAt,
+    completedAtMicros,
     playersJson,
   );
   @override
@@ -635,7 +635,7 @@ class CompletedGameRow extends DataClass
           other.rulesetId == this.rulesetId &&
           other.rulesetVersion == this.rulesetVersion &&
           other.rankedIntent == this.rankedIntent &&
-          other.completedAt == this.completedAt &&
+          other.completedAtMicros == this.completedAtMicros &&
           other.playersJson == this.playersJson);
 }
 
@@ -645,7 +645,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
   final Value<String> rulesetId;
   final Value<int> rulesetVersion;
   final Value<bool> rankedIntent;
-  final Value<DateTime> completedAt;
+  final Value<int> completedAtMicros;
   final Value<String> playersJson;
   final Value<int> rowid;
   const CompletedGamesCompanion({
@@ -654,7 +654,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
     this.rulesetId = const Value.absent(),
     this.rulesetVersion = const Value.absent(),
     this.rankedIntent = const Value.absent(),
-    this.completedAt = const Value.absent(),
+    this.completedAtMicros = const Value.absent(),
     this.playersJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -664,7 +664,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
     required String rulesetId,
     required int rulesetVersion,
     required bool rankedIntent,
-    required DateTime completedAt,
+    required int completedAtMicros,
     required String playersJson,
     this.rowid = const Value.absent(),
   }) : gameId = Value(gameId),
@@ -672,7 +672,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
        rulesetId = Value(rulesetId),
        rulesetVersion = Value(rulesetVersion),
        rankedIntent = Value(rankedIntent),
-       completedAt = Value(completedAt),
+       completedAtMicros = Value(completedAtMicros),
        playersJson = Value(playersJson);
   static Insertable<CompletedGameRow> custom({
     Expression<String>? gameId,
@@ -680,7 +680,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
     Expression<String>? rulesetId,
     Expression<int>? rulesetVersion,
     Expression<bool>? rankedIntent,
-    Expression<DateTime>? completedAt,
+    Expression<int>? completedAtMicros,
     Expression<String>? playersJson,
     Expression<int>? rowid,
   }) {
@@ -690,7 +690,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
       if (rulesetId != null) 'ruleset_id': rulesetId,
       if (rulesetVersion != null) 'ruleset_version': rulesetVersion,
       if (rankedIntent != null) 'ranked_intent': rankedIntent,
-      if (completedAt != null) 'completed_at': completedAt,
+      if (completedAtMicros != null) 'completed_at_micros': completedAtMicros,
       if (playersJson != null) 'players_json': playersJson,
       if (rowid != null) 'rowid': rowid,
     });
@@ -702,7 +702,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
     Value<String>? rulesetId,
     Value<int>? rulesetVersion,
     Value<bool>? rankedIntent,
-    Value<DateTime>? completedAt,
+    Value<int>? completedAtMicros,
     Value<String>? playersJson,
     Value<int>? rowid,
   }) {
@@ -712,7 +712,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
       rulesetId: rulesetId ?? this.rulesetId,
       rulesetVersion: rulesetVersion ?? this.rulesetVersion,
       rankedIntent: rankedIntent ?? this.rankedIntent,
-      completedAt: completedAt ?? this.completedAt,
+      completedAtMicros: completedAtMicros ?? this.completedAtMicros,
       playersJson: playersJson ?? this.playersJson,
       rowid: rowid ?? this.rowid,
     );
@@ -736,8 +736,8 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
     if (rankedIntent.present) {
       map['ranked_intent'] = Variable<bool>(rankedIntent.value);
     }
-    if (completedAt.present) {
-      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    if (completedAtMicros.present) {
+      map['completed_at_micros'] = Variable<int>(completedAtMicros.value);
     }
     if (playersJson.present) {
       map['players_json'] = Variable<String>(playersJson.value);
@@ -756,7 +756,7 @@ class CompletedGamesCompanion extends UpdateCompanion<CompletedGameRow> {
           ..write('rulesetId: $rulesetId, ')
           ..write('rulesetVersion: $rulesetVersion, ')
           ..write('rankedIntent: $rankedIntent, ')
-          ..write('completedAt: $completedAt, ')
+          ..write('completedAtMicros: $completedAtMicros, ')
           ..write('playersJson: $playersJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1169,7 +1169,7 @@ typedef $$CompletedGamesTableCreateCompanionBuilder =
       required String rulesetId,
       required int rulesetVersion,
       required bool rankedIntent,
-      required DateTime completedAt,
+      required int completedAtMicros,
       required String playersJson,
       Value<int> rowid,
     });
@@ -1180,7 +1180,7 @@ typedef $$CompletedGamesTableUpdateCompanionBuilder =
       Value<String> rulesetId,
       Value<int> rulesetVersion,
       Value<bool> rankedIntent,
-      Value<DateTime> completedAt,
+      Value<int> completedAtMicros,
       Value<String> playersJson,
       Value<int> rowid,
     });
@@ -1219,8 +1219,8 @@ class $$CompletedGamesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get completedAt => $composableBuilder(
-    column: $table.completedAt,
+  ColumnFilters<int> get completedAtMicros => $composableBuilder(
+    column: $table.completedAtMicros,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1264,8 +1264,8 @@ class $$CompletedGamesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
-    column: $table.completedAt,
+  ColumnOrderings<int> get completedAtMicros => $composableBuilder(
+    column: $table.completedAtMicros,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1303,8 +1303,8 @@ class $$CompletedGamesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
-    column: $table.completedAt,
+  GeneratedColumn<int> get completedAtMicros => $composableBuilder(
+    column: $table.completedAtMicros,
     builder: (column) => column,
   );
 
@@ -1356,7 +1356,7 @@ class $$CompletedGamesTableTableManager
                 Value<String> rulesetId = const Value.absent(),
                 Value<int> rulesetVersion = const Value.absent(),
                 Value<bool> rankedIntent = const Value.absent(),
-                Value<DateTime> completedAt = const Value.absent(),
+                Value<int> completedAtMicros = const Value.absent(),
                 Value<String> playersJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CompletedGamesCompanion(
@@ -1365,7 +1365,7 @@ class $$CompletedGamesTableTableManager
                 rulesetId: rulesetId,
                 rulesetVersion: rulesetVersion,
                 rankedIntent: rankedIntent,
-                completedAt: completedAt,
+                completedAtMicros: completedAtMicros,
                 playersJson: playersJson,
                 rowid: rowid,
               ),
@@ -1376,7 +1376,7 @@ class $$CompletedGamesTableTableManager
                 required String rulesetId,
                 required int rulesetVersion,
                 required bool rankedIntent,
-                required DateTime completedAt,
+                required int completedAtMicros,
                 required String playersJson,
                 Value<int> rowid = const Value.absent(),
               }) => CompletedGamesCompanion.insert(
@@ -1385,7 +1385,7 @@ class $$CompletedGamesTableTableManager
                 rulesetId: rulesetId,
                 rulesetVersion: rulesetVersion,
                 rankedIntent: rankedIntent,
-                completedAt: completedAt,
+                completedAtMicros: completedAtMicros,
                 playersJson: playersJson,
                 rowid: rowid,
               ),

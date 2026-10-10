@@ -58,6 +58,39 @@ final class FailOnceRepository implements GameRepository {
   );
 }
 
+final class SecondSaveFailsRepository implements GameRepository {
+  SecondSaveFailsRepository(this.inner, this.gate);
+  final GameRepository inner;
+  final Completer<void> gate;
+  int saves = 0;
+
+  @override
+  Future<void> saveActive(GameSession session) async {
+    final call = ++saves;
+    await gate.future;
+    if (call == 2) throw StateError('second overlapping save failed');
+    await inner.saveActive(session);
+  }
+
+  @override
+  Future<GameSession?> loadActive(String gameId) => inner.loadActive(gameId);
+  @override
+  Stream<List<GameSession>> watchActive() => inner.watchActive();
+  @override
+  Future<void> complete(GameSession session) => inner.complete(session);
+  @override
+  Stream<List<CompletedGame>> watchCompleted({String? rulesetId}) =>
+      inner.watchCompleted(rulesetId: rulesetId);
+  @override
+  Future<double?> latestTenSoloAverage({
+    required String rulesetId,
+    required int rulesetVersion,
+  }) => inner.latestTenSoloAverage(
+    rulesetId: rulesetId,
+    rulesetVersion: rulesetVersion,
+  );
+}
+
 GameSession initial({GameMode mode = GameMode.solo}) => GameSession.start(
   gameId: 'controller-game',
   rankedIntent: true,
@@ -273,4 +306,39 @@ void main() {
       await db.close();
     }
   });
+
+  test(
+    'overlapping retries cannot overwrite a successful save with an error',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final gate = Completer<void>();
+      final repository = SecondSaveFailsRepository(
+        DriftGameRepository(db),
+        gate,
+      );
+      final container = ProviderContainer(
+        overrides: [
+          gameRepositoryProvider.overrideWithValue(repository),
+          initialGameSessionProvider.overrideWithValue(initial()),
+          diceRollerProvider.overrideWithValue(const FixedRoller(6)),
+        ],
+      );
+      try {
+        final controller = container.read(gameControllerProvider.notifier);
+        final first = controller.apply(const RollDice());
+        final second = controller.retryPersistence();
+        gate.complete();
+        await Future.wait([first, second]);
+        expect(repository.saves, 1);
+        expect(
+          container.read(gameControllerProvider).requireValue.rollCount,
+          1,
+        );
+        expect(controller.pending, isNull);
+      } finally {
+        container.dispose();
+        await db.close();
+      }
+    },
+  );
 }

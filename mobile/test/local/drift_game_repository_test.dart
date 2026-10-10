@@ -146,6 +146,19 @@ void main() {
     },
   );
 
+  test('completion preserves subsecond time and its ordering', () async {
+    final earlier = DateTime.utc(2026, 10, 4, 12, 0, 0, 123, 456);
+    now = earlier;
+    await repository.complete(finish(game('a')));
+    now = earlier.add(const Duration(milliseconds: 500));
+    await repository.complete(finish(game('z')));
+
+    final history = await repository.watchCompleted().first;
+    expect(history.map((result) => result.gameId), ['z', 'a']);
+    expect(history.last.completedAt, earlier);
+    expect(history.first.completedAt, now);
+  });
+
   test(
     'latest ten solo average excludes older and pass-and-play games',
     () async {

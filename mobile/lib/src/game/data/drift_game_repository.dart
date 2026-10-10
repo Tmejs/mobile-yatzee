@@ -80,7 +80,7 @@ final class DriftGameRepository implements GameRepository {
               rulesetId: result.rulesetId,
               rulesetVersion: result.rulesetVersion,
               rankedIntent: result.rankedIntent,
-              completedAt: result.completedAt,
+              completedAtMicros: result.completedAt.microsecondsSinceEpoch,
               playersJson: _playersJson(result.players),
             ),
           );
@@ -97,7 +97,7 @@ final class DriftGameRepository implements GameRepository {
       query.where((row) => row.rulesetId.equals(rulesetId));
     }
     query.orderBy([
-      (row) => OrderingTerm.desc(row.completedAt),
+      (row) => OrderingTerm.desc(row.completedAtMicros),
       (row) => OrderingTerm.asc(row.gameId),
     ]);
     return query.watch().map(
@@ -118,7 +118,7 @@ final class DriftGameRepository implements GameRepository {
             row.mode.equals(GameMode.solo.name),
       )
       ..orderBy([
-        (row) => OrderingTerm.desc(row.completedAt),
+        (row) => OrderingTerm.desc(row.completedAtMicros),
         (row) => OrderingTerm.asc(row.gameId),
       ])
       ..limit(10);
@@ -160,7 +160,10 @@ final class DriftGameRepository implements GameRepository {
       rulesetId: row.rulesetId,
       rulesetVersion: row.rulesetVersion,
       rankedIntent: row.rankedIntent,
-      completedAt: row.completedAt.toUtc(),
+      completedAt: DateTime.fromMicrosecondsSinceEpoch(
+        row.completedAtMicros,
+        isUtc: true,
+      ),
       players: [
         for (final value in playersJson)
           _decodePlayer(value as Map<String, dynamic>),

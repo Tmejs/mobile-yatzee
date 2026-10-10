@@ -7,7 +7,7 @@ class CompletedGames extends Table {
   TextColumn get rulesetId => text()();
   IntColumn get rulesetVersion => integer()();
   BoolColumn get rankedIntent => boolean()();
-  DateTimeColumn get completedAt => dateTime()();
+  IntColumn get completedAtMicros => integer()();
   TextColumn get playersJson => text()();
 
   @override

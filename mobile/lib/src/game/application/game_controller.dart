@@ -7,6 +7,7 @@ import 'providers.dart';
 
 final class GameController extends Notifier<AsyncValue<GameSession>> {
   GameSession? _pending;
+  Future<void>? _persistenceInFlight;
   late GameSession _lastPublished;
   final GameReducer _reducer = GameReducer();
 
@@ -36,9 +37,21 @@ final class GameController extends Notifier<AsyncValue<GameSession>> {
     await retryPersistence();
   }
 
-  Future<void> retryPersistence() async {
+  Future<void> retryPersistence() {
+    final ongoing = _persistenceInFlight;
+    if (ongoing != null) return ongoing;
     final next = _pending;
-    if (next == null) throw StateError('No pending transition');
+    if (next == null) return Future.error(StateError('No pending transition'));
+    final attempt = _persistPending(next);
+    _persistenceInFlight = attempt;
+    return attempt.whenComplete(() {
+      if (identical(_persistenceInFlight, attempt)) {
+        _persistenceInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _persistPending(GameSession next) async {
     try {
       final repository = ref.read(gameRepositoryProvider);
       if (next.isComplete) {
