@@ -67,3 +67,12 @@
 - Handoff self-review found and fixed two Important issues: overlapping retries could publish an error after a successful save, and Drift's default timestamp mapping lost subsecond precision.
 - Task-review fix round 1 addressed two further Important controller races: a success listener could start a transition that reused the old completed attempt, and a delayed save from a replaced session could publish into the new session. Controlled listener and delayed success/failure regressions passed; focused suite: 17 tests; full gate: 58 tests, formatting unchanged, analysis clean.
 - Scoped re-review passed 19 repository tests and three additional lifecycle checks with no findings. Broad final review repeated the focused suite and full gate and found no Critical or Important findings; its only Minor documentation finding was this stale review status, now corrected before exact-head verification.
+
+## Checkpoint 8 — Modern Tabletop UI and localization
+
+- Added Polish-default and English ARB localization, a centralized Modern Tabletop theme, and portrait home, setup, and game flows.
+- Setup supports solo and two-to-four-player pass-and-play games across all three versioned rulesets and creates UUID-backed local sessions.
+- The game screen keeps every score column visible, combines a gold active-player treatment with full-name semantics, exposes localized die/hold semantics, confirms every zero score, disables actions while persistence is pending, and provides localized completion and retry states.
+- Test-first cycles cover localization, player limits, four-column active state, dice and three-roll behavior, zero confirmation/cancel, completion, pending writes, persistence retry, and focused scorecard accessibility.
+- Five reviewed portrait baselines cover solo, two-player, four-player, Polish, English, and a constrained text-scale-2.0 layout. Golden verification passed 5/5 without update mode.
+- Self-review found one Important token-centralization issue and fixed the remaining literal tabletop colors/radii/elevation to consume `TabletopTheme`. The post-fix focused suite passed 12/12 and the complete local gate passed formatting, clean analysis, and 74/74 tests. Independent review, push, merge, and synchronization remain pending.
