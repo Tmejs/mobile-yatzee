@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "appTitle": "Generał", "homeTagline": "Kości, strategia i wspólny stół", "newGame": "Nowa gra",
+  "setupTitle": "Ustawienia gry", "solo": "Gra solo", "passAndPlay": "Podaj dalej", "ruleset": "Zasady",
+  "polishGeneral": "Generał", "classicYahtzee": "Klasyczny Yahtzee", "scandinavianYatzy": "Skandynawski Yatzy",
+  "playerName": "Imię gracza {number}", "@playerName": {"placeholders": {"number": {"type": "int"}}},
+  "defaultPlayerName": "Gracz {number}", "@defaultPlayerName": {"placeholders": {"number": {"type": "int"}}},
+  "addPlayer": "Dodaj gracza", "removePlayer": "Usuń gracza", "startGame": "Rozpocznij grę",
+  "rollDice": "Rzuć kośćmi", "rollAgain": "Rzuć ponownie",
+  "rolls": "Rzuty: {count}/3", "@rolls": {"placeholders": {"count": {"type": "int"}}},
+  "round": "Runda {number}", "@round": {"placeholders": {"number": {"type": "int"}}},
+  "activePlayer": "aktywny gracz: {name}", "@activePlayer": {"placeholders": {"name": {"type": "String"}}},
+  "dieFace": "Kość {number}, wynik {face}", "@dieFace": {"placeholders": {"number": {"type": "int"}, "face": {"type": "int"}}},
+  "dieNotRolled": "Kość {number}, jeszcze nie rzucona", "@dieNotRolled": {"placeholders": {"number": {"type": "int"}}},
+  "held": "zatrzymana", "notHeld": "niezatrzymana",
+  "scoreCell": "{category}, {player}, {score}", "@scoreCell": {"placeholders": {"category": {"type": "String"}, "player": {"type": "String"}, "score": {"type": "String"}}},
+  "notScored": "brak wyniku", "total": "Suma",
+  "zeroScoreTitle": "Wpisać 0 punktów?", "zeroScoreMessage": "Ten wybór zapisze zero w tej kategorii.", "cancel": "Anuluj", "confirmZero": "Wpisz 0",
+  "saveFailed": "Nie udało się zapisać gry.", "retry": "Spróbuj ponownie", "loading": "Wczytywanie gry", "gameComplete": "Gra zakończona",
+  "categoryOnes": "Jedynki", "categoryTwos": "Dwójki", "categoryThrees": "Trójki", "categoryFours": "Czwórki", "categoryFives": "Piątki", "categorySixes": "Szóstki",
+  "categoryThreeKind": "Trzy jednakowe", "categoryFourKind": "Cztery jednakowe", "categoryFullHouse": "Full", "categorySmallStraight": "Mały strit", "categoryLargeStraight": "Duży strit",
+  "categoryGeneral": "Generał", "categoryChance": "Szansa", "categoryYahtzee": "Yahtzee", "categoryYatzy": "Yatzy", "categoryOnePair": "Jedna para", "categoryTwoPairs": "Dwie pary"
+}
