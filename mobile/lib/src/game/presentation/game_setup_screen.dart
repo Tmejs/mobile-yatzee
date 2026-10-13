@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_yatzee/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../theme/modern_tabletop_theme.dart';
 import '../application/providers.dart';
 import '../session/game_mode.dart';
 import '../session/game_session.dart';
@@ -46,17 +47,19 @@ final class _GameSetupScreenState extends State<GameSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final tokens =
+        Theme.of(context).extension<TabletopTheme>() ?? TabletopTheme.standard;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.setupTitle)),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(tokens.screenPadding),
           children: [
             SegmentedButton<GameMode>(
               segments: [
                 ButtonSegment(
                   value: GameMode.solo,
-                  label: Text(l10n.solo),
+                  label: Text(l10n.solo, style: tokens.bodyStyle),
                   icon: const Icon(Icons.person),
                 ),
                 ButtonSegment(
@@ -64,6 +67,7 @@ final class _GameSetupScreenState extends State<GameSetupScreen> {
                   label: Text(
                     l10n.passAndPlay,
                     key: const Key('mode-pass-and-play'),
+                    style: tokens.bodyStyle,
                   ),
                   icon: const Icon(Icons.groups),
                 ),
@@ -74,33 +78,34 @@ final class _GameSetupScreenState extends State<GameSetupScreen> {
                 _setPlayerCount(_mode == GameMode.solo ? 1 : 2);
               }),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: tokens.screenPadding),
             DropdownButtonFormField<String>(
               initialValue: _rulesetId,
               decoration: InputDecoration(labelText: l10n.ruleset),
               items: [
                 DropdownMenuItem(
                   value: 'polish-general',
-                  child: Text(l10n.polishGeneral),
+                  child: Text(l10n.polishGeneral, style: tokens.bodyStyle),
                 ),
                 DropdownMenuItem(
                   value: 'classic-yahtzee',
-                  child: Text(l10n.classicYahtzee),
+                  child: Text(l10n.classicYahtzee, style: tokens.bodyStyle),
                 ),
                 DropdownMenuItem(
                   value: 'scandinavian-yatzy',
-                  child: Text(l10n.scandinavianYatzy),
+                  child: Text(l10n.scandinavianYatzy, style: tokens.bodyStyle),
                 ),
               ],
               onChanged: (value) => setState(() => _rulesetId = value!),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: tokens.spacing),
             for (var index = 0; index < _names.length; index++)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: tokens.compactSpacing),
                 child: TextField(
                   key: Key('player-name-$index'),
                   controller: _names[index],
+                  style: tokens.bodyStyle,
                   maxLength: 30,
                   decoration: InputDecoration(
                     labelText: l10n.playerName(index + 1),
@@ -132,10 +137,10 @@ final class _GameSetupScreenState extends State<GameSetupScreen> {
                   ),
                 ],
               ),
-            const SizedBox(height: 12),
+            SizedBox(height: tokens.spacing),
             FilledButton(
               onPressed: () => _start(l10n),
-              child: Text(l10n.startGame),
+              child: Text(l10n.startGame, style: tokens.bodyStyle),
             ),
           ],
         ),

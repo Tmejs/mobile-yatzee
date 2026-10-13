@@ -84,7 +84,11 @@ final class _GameScreenState extends ConsumerState<GameScreen> {
               child: DiceTray(
                 dice: state.dice,
                 held: state.held,
-                canHold: !_busy && state.rollCount > 0 && state.rollCount < 3,
+                canHold:
+                    !_busy &&
+                    !value.hasError &&
+                    state.rollCount > 0 &&
+                    state.rollCount < 3,
                 faceLabel: (index, face, held) =>
                     '${face == null ? l10n.dieNotRolled(index + 1) : l10n.dieFace(index + 1, face)}, ${held ? l10n.held : l10n.notHeld}',
                 onToggleHold: (index) => _apply(controller, ToggleHold(index)),
@@ -123,6 +127,7 @@ final class _GameScreenState extends ConsumerState<GameScreen> {
                   ),
                   isCategorySelectable: (category) =>
                       !_busy &&
+                      !value.hasError &&
                       state.dice != null &&
                       ruleset
                           .evaluate(

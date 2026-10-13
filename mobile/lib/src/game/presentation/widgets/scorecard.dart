@@ -44,7 +44,8 @@ final class Scorecard extends StatelessWidget {
                   child: PlayerHeader(
                     playerId: state.players[index].id,
                     name: state.players[index].name,
-                    active: index == state.activePlayerIndex,
+                    active:
+                        !state.isComplete && index == state.activePlayerIndex,
                     activeLabel: activePlayerLabel(state.players[index].name),
                   ),
                 ),
@@ -59,24 +60,28 @@ final class Scorecard extends StatelessWidget {
               SizedBox(
                 width: categoryWidth,
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(tokens.compactSpacing),
                   child: Text(
                     totalLabel,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: tokens.bodyStyle.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
               for (var index = 0; index < state.players.length; index++)
                 Expanded(
                   child: Container(
-                    color: index == state.activePlayerIndex
+                    color: !state.isComplete && index == state.activePlayerIndex
                         ? tokens.gold.withValues(alpha: 0.2)
                         : null,
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(tokens.compactSpacing),
                     alignment: Alignment.center,
                     child: Text(
                       '${state.totalsFor(index).finalTotal}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: tokens.bodyStyle.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -108,10 +113,11 @@ final class Scorecard extends StatelessWidget {
                 : null,
             style: TextButton.styleFrom(
               alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: tokens.compactSpacing),
             ),
             child: Text(
               categoryLabel(category.id),
+              style: tokens.bodyStyle,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -129,7 +135,7 @@ final class Scorecard extends StatelessWidget {
               excludeSemantics: true,
               child: Container(
                 key: Key('score-${category.id}-p$index-value'),
-                color: index == state.activePlayerIndex
+                color: !state.isComplete && index == state.activePlayerIndex
                     ? tokens.gold.withValues(alpha: 0.2)
                     : null,
                 alignment: Alignment.center,
@@ -137,6 +143,7 @@ final class Scorecard extends StatelessWidget {
                   state.players[index].scoreSheet.scores[category.id]
                           ?.toString() ??
                       '—',
+                  style: tokens.bodyStyle,
                 ),
               ),
             ),

@@ -9,25 +9,34 @@ final class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final tokens = Theme.of(context).extension<TabletopTheme>()!;
+    final tokens =
+        Theme.of(context).extension<TabletopTheme>() ?? TabletopTheme.standard;
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: Card(
-            margin: const EdgeInsets.all(24),
+            margin: EdgeInsets.all(tokens.spacing * 2),
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(tokens.compactSpacing * 4),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.casino, size: 72, color: tokens.gold),
-                  const SizedBox(height: 16),
+                  Icon(
+                    Icons.casino,
+                    size: tokens.spacing * 6,
+                    color: tokens.gold,
+                  ),
+                  SizedBox(height: tokens.compactSpacing * 2),
                   Text(
                     l10n.appTitle,
                     style: tokens.titleStyle.copyWith(fontSize: 36),
                   ),
-                  const SizedBox(height: 8),
-                  Text(l10n.homeTagline, textAlign: TextAlign.center),
+                  SizedBox(height: tokens.compactSpacing),
+                  Text(
+                    l10n.homeTagline,
+                    textAlign: TextAlign.center,
+                    style: tokens.bodyStyle,
+                  ),
                   const SizedBox(height: 28),
                   FilledButton.icon(
                     onPressed: () => Navigator.push(

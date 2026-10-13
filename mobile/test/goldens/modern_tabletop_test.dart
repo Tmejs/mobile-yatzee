@@ -44,6 +44,24 @@ GameSession _session(int count) => GameSession.start(
   ],
 );
 
+const _longPlayerNames = [
+  'Aleksandra Kowalska-Zawadzka',
+  'Konstanty Maksymilian Wiśniewski',
+  'Małgorzata Krystyna Nowakowska',
+  'Bartłomiej Zieliński-Piotrowski',
+];
+
+GameSession _fourLongNameSession() => GameSession.start(
+  gameId: 'golden-four-long',
+  rulesetId: 'polish-general',
+  rulesetVersion: 1,
+  mode: GameMode.passAndPlay,
+  players: [
+    for (var index = 0; index < _longPlayerNames.length; index++)
+      Player(id: 'p$index', name: _longPlayerNames[index]),
+  ],
+);
+
 Future<void> _golden(
   WidgetTester tester, {
   required String name,
@@ -51,13 +69,16 @@ Future<void> _golden(
   required Locale locale,
   Size size = const Size(390, 844),
   double scale = 1,
+  bool fourLongNames = false,
 }) async {
   await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        initialGameSessionProvider.overrideWithValue(_session(players)),
+        initialGameSessionProvider.overrideWithValue(
+          fourLongNames ? _fourLongNameSession() : _session(players),
+        ),
         gameRepositoryProvider.overrideWithValue(_NoopRepository()),
       ],
       child: MaterialApp(
@@ -77,6 +98,18 @@ Future<void> _golden(
   );
   await tester.pumpAndSettle();
   expect(tester.takeException(), isNull);
+  if (fourLongNames) {
+    for (var index = 0; index < 4; index++) {
+      final player = find.byKey(Key('player-column-p$index'));
+      expect(player, findsWidgets);
+      expect(
+        tester.getSemantics(player.first).label,
+        index == 0
+            ? 'active player: ${_longPlayerNames[index]}'
+            : _longPlayerNames[index],
+      );
+    }
+  }
   await expectLater(
     find.byType(MaterialApp),
     matchesGoldenFile('baselines/$name.png'),
@@ -129,6 +162,18 @@ void main() {
       locale: const Locale('pl'),
       size: const Size(320, 700),
       scale: 2,
+    ),
+  );
+  testWidgets(
+    'four long names at large text on constrained portrait',
+    (tester) => _golden(
+      tester,
+      name: 'four-player-long-names-large-text',
+      players: 4,
+      locale: const Locale('en'),
+      size: const Size(360, 780),
+      scale: 2,
+      fourLongNames: true,
     ),
   );
 }

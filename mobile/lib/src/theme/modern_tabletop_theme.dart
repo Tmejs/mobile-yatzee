@@ -8,7 +8,9 @@ final class TabletopTheme extends ThemeExtension<TabletopTheme> {
     required this.gold,
     required this.error,
     required this.success,
+    required this.compactSpacing,
     required this.spacing,
+    required this.screenPadding,
     required this.radius,
     required this.elevation,
     required this.titleStyle,
@@ -21,7 +23,9 @@ final class TabletopTheme extends ThemeExtension<TabletopTheme> {
     gold: Color(0xFFC99A2E),
     error: Color(0xFFB3261E),
     success: Color(0xFF2E7D32),
+    compactSpacing: 8,
     spacing: 12,
+    screenPadding: 20,
     radius: 16,
     elevation: 3,
     titleStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
@@ -29,7 +33,7 @@ final class TabletopTheme extends ThemeExtension<TabletopTheme> {
   );
 
   final Color felt, ivory, gold, error, success;
-  final double spacing, radius, elevation;
+  final double compactSpacing, spacing, screenPadding, radius, elevation;
   final TextStyle titleStyle, bodyStyle;
 
   @override
@@ -39,7 +43,9 @@ final class TabletopTheme extends ThemeExtension<TabletopTheme> {
     Color? gold,
     Color? error,
     Color? success,
+    double? compactSpacing,
     double? spacing,
+    double? screenPadding,
     double? radius,
     double? elevation,
     TextStyle? titleStyle,
@@ -50,7 +56,9 @@ final class TabletopTheme extends ThemeExtension<TabletopTheme> {
     gold: gold ?? this.gold,
     error: error ?? this.error,
     success: success ?? this.success,
+    compactSpacing: compactSpacing ?? this.compactSpacing,
     spacing: spacing ?? this.spacing,
+    screenPadding: screenPadding ?? this.screenPadding,
     radius: radius ?? this.radius,
     elevation: elevation ?? this.elevation,
     titleStyle: titleStyle ?? this.titleStyle,
@@ -66,7 +74,10 @@ final class TabletopTheme extends ThemeExtension<TabletopTheme> {
       gold: Color.lerp(gold, other.gold, t)!,
       error: Color.lerp(error, other.error, t)!,
       success: Color.lerp(success, other.success, t)!,
+      compactSpacing:
+          compactSpacing + (other.compactSpacing - compactSpacing) * t,
       spacing: spacing + (other.spacing - spacing) * t,
+      screenPadding: screenPadding + (other.screenPadding - screenPadding) * t,
       radius: radius + (other.radius - radius) * t,
       elevation: elevation + (other.elevation - elevation) * t,
       titleStyle: TextStyle.lerp(titleStyle, other.titleStyle, t)!,

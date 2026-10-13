@@ -237,9 +237,48 @@ void main() {
     expect(repository.saved?.rollCount, 1);
   });
 
+  testWidgets('a failed later save leaves retry as the only action', (
+    tester,
+  ) async {
+    final repository = _MemoryRepository();
+    await _pumpGame(tester, repository: repository);
+    final roll = find.byKey(const Key('roll-dice'));
+    await tester.tap(roll);
+    await tester.pumpAndSettle();
+    repository.failNext = true;
+    await tester.tap(roll);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nie udało się zapisać gry.'), findsOneWidget);
+    expect(tester.widget<FilledButton>(roll).onPressed, isNull);
+    expect(
+      tester.widget<InkWell>(find.byKey(const Key('die-0'))).onTap,
+      isNull,
+    );
+    expect(
+      tester.widget<TextButton>(find.byKey(const Key('score-ones'))).onPressed,
+      isNull,
+    );
+
+    await tester.tap(find.byKey(const Key('retry-persistence')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(roll).onPressed, isNotNull);
+    expect(
+      tester.widget<InkWell>(find.byKey(const Key('die-0'))).onTap,
+      isNotNull,
+    );
+    expect(
+      tester.widget<TextButton>(find.byKey(const Key('score-ones'))).onPressed,
+      isNotNull,
+    );
+  });
+
   testWidgets('announces a completed game', (tester) async {
     await _pumpGame(tester, session: _completedSession());
     expect(find.text('Gra zakończona'), findsOneWidget);
+    final player = find.byKey(const Key('player-column-p0')).first;
+    expect(tester.getSemantics(player).label, isNot(contains('aktywny gracz')));
+    expect(tester.widget<Container>(player).color, Colors.transparent);
   });
 
   testWidgets('disables commands while a save is pending', (tester) async {

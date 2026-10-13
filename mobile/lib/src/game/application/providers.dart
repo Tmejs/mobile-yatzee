@@ -19,6 +19,7 @@ final gameRepositoryProvider = Provider<GameRepository>(
 
 final initialGameSessionProvider = Provider<GameSession>(
   (ref) => throw StateError('Provide an initial or restored game session'),
+  dependencies: const [],
 );
 
 final diceRollerProvider = Provider<DiceRoller>((ref) => SecureDiceRoller());
@@ -26,4 +27,5 @@ final diceRollerProvider = Provider<DiceRoller>((ref) => SecureDiceRoller());
 final gameControllerProvider =
     NotifierProvider<GameController, AsyncValue<GameSession>>(
       GameController.new,
+      dependencies: [initialGameSessionProvider],
     );
