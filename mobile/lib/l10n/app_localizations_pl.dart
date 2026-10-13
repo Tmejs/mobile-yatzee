@@ -101,6 +101,27 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
+  String scoreAvailable(int score) {
+    return 'Dostępne: $score pkt';
+  }
+
+  @override
+  String scoreUnavailable(int score) {
+    return 'Niedostępne: $score pkt';
+  }
+
+  @override
+  String scoreRecorded(int score) {
+    return 'Zapisano: $score pkt';
+  }
+
+  @override
+  String get activeScoreCell => 'aktywny gracz';
+
+  @override
+  String get inactiveScoreCell => 'gracz nieaktywny';
+
+  @override
   String get notScored => 'brak wyniku';
 
   @override

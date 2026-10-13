@@ -47,6 +47,20 @@ final class _GameScreenState extends ConsumerState<GameScreen> {
       state.rulesetId,
       state.rulesetVersion,
     );
+    ScorecardPreview? previewForCategory(String category) {
+      final dice = state.dice;
+      if (dice == null) return null;
+      final evaluation = ruleset.evaluate(
+        category,
+        DiceRoll(dice),
+        state.players[state.activePlayerIndex].scoreSheet,
+      );
+      return ScorecardPreview(
+        score: evaluation.score,
+        selectable: evaluation.selectable,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.round(state.round)),
@@ -120,22 +134,25 @@ final class _GameScreenState extends ConsumerState<GameScreen> {
                   categories: ruleset.categories,
                   categoryLabel: (id) => _categoryLabel(l10n, id),
                   activePlayerLabel: l10n.activePlayer,
-                  scoreLabel: (category, player, score) => l10n.scoreCell(
-                    category,
-                    player,
-                    score?.toString() ?? l10n.notScored,
-                  ),
+                  scoreLabel: (category, player, score, status, active) {
+                    final scoreState = switch (status) {
+                      ScoreCellStatus.recorded => l10n.scoreRecorded(score!),
+                      ScoreCellStatus.available => l10n.scoreAvailable(score!),
+                      ScoreCellStatus.unavailable => l10n.scoreUnavailable(
+                        score!,
+                      ),
+                      ScoreCellStatus.empty => l10n.notScored,
+                    };
+                    final activeState = active
+                        ? l10n.activeScoreCell
+                        : l10n.inactiveScoreCell;
+                    return '${l10n.scoreCell(category, player, scoreState)}, $activeState';
+                  },
+                  previewForCategory: previewForCategory,
                   isCategorySelectable: (category) =>
                       !_busy &&
                       !value.hasError &&
-                      state.dice != null &&
-                      ruleset
-                          .evaluate(
-                            category,
-                            DiceRoll(state.dice!),
-                            state.players[state.activePlayerIndex].scoreSheet,
-                          )
-                          .selectable,
+                      (previewForCategory(category)?.selectable ?? false),
                   totalLabel: l10n.total,
                   onCategorySelected: (category) => _selectCategory(
                     context,

@@ -7,6 +7,7 @@ import 'package:mobile_yatzee/l10n/app_localizations.dart';
 import 'package:mobile_yatzee/src/game/application/providers.dart';
 import 'package:mobile_yatzee/src/game/data/game_repository.dart';
 import 'package:mobile_yatzee/src/game/domain/completed_game.dart';
+import 'package:mobile_yatzee/src/game/domain/score_sheet.dart';
 import 'package:mobile_yatzee/src/game/presentation/game_screen.dart';
 import 'package:mobile_yatzee/src/game/session/dice_roller.dart';
 import 'package:mobile_yatzee/src/game/session/game_mode.dart';
@@ -77,6 +78,7 @@ Future<void> _pumpGame(
   int players = 2,
   _MemoryRepository? repository,
   GameSession? session,
+  List<int> dice = const [6, 6, 6, 6, 6],
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -87,9 +89,7 @@ Future<void> _pumpGame(
         gameRepositoryProvider.overrideWithValue(
           repository ?? _MemoryRepository(),
         ),
-        diceRollerProvider.overrideWithValue(
-          _SequenceRoller(const [6, 6, 6, 6, 6]),
-        ),
+        diceRollerProvider.overrideWithValue(_SequenceRoller(dice)),
       ],
       child: MaterialApp(
         locale: locale,
@@ -100,6 +100,25 @@ Future<void> _pumpGame(
     ),
   );
 }
+
+GameSession _classicForcedPlacementSession() => GameSession.restore(
+  gameId: 'classic-preview',
+  rulesetId: 'classic-yahtzee',
+  rulesetVersion: 1,
+  mode: GameMode.solo,
+  players: [
+    Player(
+      id: 'p0',
+      name: 'Ada',
+      scoreSheet: ScoreSheet(scores: const {'yahtzee': 50}),
+    ),
+  ],
+  activePlayerIndex: 0,
+  round: 2,
+  dice: null,
+  held: const [false, false, false, false, false],
+  rollCount: 0,
+);
 
 GameSession _completedSession() {
   var game = _session(players: 1);
@@ -185,6 +204,90 @@ void main() {
   });
 
   testWidgets(
+    'shows projected scores only for the active player after a roll',
+    (tester) async {
+      await _pumpGame(tester);
+
+      await tester.tap(find.byKey(const Key('roll-dice')));
+      await tester.pumpAndSettle();
+
+      final positive = find.byKey(const Key('score-sixes-p0-value'));
+      final zero = find.byKey(const Key('score-ones-p0-value'));
+      final inactive = find.byKey(const Key('score-sixes-p1-value'));
+      expect(
+        find.descendant(of: positive, matching: find.text('30')),
+        findsOne,
+      );
+      expect(find.descendant(of: zero, matching: find.text('0')), findsOne);
+      expect(find.descendant(of: inactive, matching: find.text('—')), findsOne);
+      expect(
+        tester.getSemantics(find.byKey(const Key('score-sixes-p0'))).label,
+        allOf(contains('Dostępne: 30 pkt'), contains('aktywny gracz')),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('score-sixes-p1'))).label,
+        allOf(contains('brak wyniku'), contains('gracz nieaktywny')),
+      );
+    },
+  );
+
+  testWidgets('announces English score availability and active state', (
+    tester,
+  ) async {
+    await _pumpGame(tester, locale: const Locale('en'));
+
+    await tester.tap(find.byKey(const Key('roll-dice')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSemantics(find.byKey(const Key('score-sixes-p0'))).label,
+      allOf(contains('30 points available'), contains('active player')),
+    );
+  });
+
+  testWidgets('marks recorded and forced-placement cells without color alone', (
+    tester,
+  ) async {
+    await _pumpGame(tester, session: _classicForcedPlacementSession());
+
+    await tester.tap(find.byKey(const Key('roll-dice')));
+    await tester.pumpAndSettle();
+
+    final recorded = find.byKey(const Key('score-yahtzee-p0-value'));
+    final available = find.byKey(const Key('score-sixes-p0-value'));
+    final unavailable = find.byKey(const Key('score-chance-p0-value'));
+    expect(find.descendant(of: recorded, matching: find.text('50')), findsOne);
+    expect(find.descendant(of: available, matching: find.text('30')), findsOne);
+    expect(
+      find.descendant(of: unavailable, matching: find.text('0')),
+      findsOne,
+    );
+    expect(
+      find.descendant(of: recorded, matching: find.byIcon(Icons.check)),
+      findsOne,
+    );
+    expect(
+      find.descendant(
+        of: available,
+        matching: find.byIcon(Icons.add_circle_outline),
+      ),
+      findsOne,
+    );
+    expect(
+      find.descendant(of: unavailable, matching: find.byIcon(Icons.block)),
+      findsOne,
+    );
+    expect(
+      tester.getSemantics(find.byKey(const Key('score-yahtzee-p0'))).label,
+      contains('Zapisano: 50 pkt'),
+    );
+    expect(
+      tester.getSemantics(find.byKey(const Key('score-chance-p0'))).label,
+      contains('Niedostępne: 0 pkt'),
+    );
+  });
+
+  testWidgets(
     'requires confirmation before recording zero and cancel is inert',
     (tester) async {
       await _pumpGame(tester);
@@ -199,7 +302,7 @@ void main() {
       expect(find.text('Wpisać 0 punktów?'), findsNothing);
       final scoreValue = find.byKey(const Key('score-small-straight-p0-value'));
       expect(
-        find.descendant(of: scoreValue, matching: find.text('—')),
+        find.descendant(of: scoreValue, matching: find.text('0')),
         findsOneWidget,
       );
 

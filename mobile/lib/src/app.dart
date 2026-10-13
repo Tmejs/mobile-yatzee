@@ -12,7 +12,13 @@ class MobileYatzeeApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-    locale: locale ?? const Locale('pl'),
+    locale: locale,
+    localeResolutionCallback: (requested, supported) {
+      for (final candidate in supported) {
+        if (candidate.languageCode == requested?.languageCode) return candidate;
+      }
+      return const Locale('pl');
+    },
     supportedLocales: AppLocalizations.supportedLocales,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     theme: modernTabletopTheme(),

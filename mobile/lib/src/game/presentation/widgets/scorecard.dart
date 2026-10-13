@@ -5,6 +5,15 @@ import '../../session/game_session.dart';
 import '../../../theme/modern_tabletop_theme.dart';
 import 'player_header.dart';
 
+enum ScoreCellStatus { recorded, available, unavailable, empty }
+
+final class ScorecardPreview {
+  const ScorecardPreview({required this.score, required this.selectable});
+
+  final int score;
+  final bool selectable;
+}
+
 final class Scorecard extends StatelessWidget {
   const Scorecard({
     required this.state,
@@ -12,6 +21,7 @@ final class Scorecard extends StatelessWidget {
     required this.categoryLabel,
     required this.activePlayerLabel,
     required this.scoreLabel,
+    required this.previewForCategory,
     required this.isCategorySelectable,
     required this.onCategorySelected,
     this.totalLabel = 'Total',
@@ -21,7 +31,15 @@ final class Scorecard extends StatelessWidget {
   final List<CategoryDefinition> categories;
   final String Function(String id) categoryLabel;
   final String Function(String name) activePlayerLabel;
-  final String Function(String category, String player, int? score) scoreLabel;
+  final String Function(
+    String category,
+    String player,
+    int? score,
+    ScoreCellStatus status,
+    bool active,
+  )
+  scoreLabel;
+  final ScorecardPreview? Function(String category) previewForCategory;
   final bool Function(String category) isCategorySelectable;
   final ValueChanged<String> onCategorySelected;
   final String totalLabel;
@@ -124,31 +142,71 @@ final class Scorecard extends StatelessWidget {
           ),
         ),
         for (var index = 0; index < state.players.length; index++)
-          Expanded(
-            child: Semantics(
-              key: Key('score-${category.id}-${state.players[index].id}'),
-              label: scoreLabel(
-                categoryLabel(category.id),
-                state.players[index].name,
-                state.players[index].scoreSheet.scores[category.id],
-              ),
-              excludeSemantics: true,
-              child: Container(
-                key: Key('score-${category.id}-p$index-value'),
-                color: !state.isComplete && index == state.activePlayerIndex
-                    ? tokens.gold.withValues(alpha: 0.2)
-                    : null,
-                alignment: Alignment.center,
-                child: Text(
-                  state.players[index].scoreSheet.scores[category.id]
-                          ?.toString() ??
-                      '—',
-                  style: tokens.bodyStyle,
-                ),
-              ),
-            ),
-          ),
+          Expanded(child: _cell(category, index, tokens)),
       ],
     ),
   );
+
+  Widget _cell(
+    CategoryDefinition category,
+    int playerIndex,
+    TabletopTheme tokens,
+  ) {
+    final player = state.players[playerIndex];
+    final recorded = player.scoreSheet.scores[category.id];
+    final active = !state.isComplete && playerIndex == state.activePlayerIndex;
+    final preview = active && recorded == null
+        ? previewForCategory(category.id)
+        : null;
+    final status = recorded != null
+        ? ScoreCellStatus.recorded
+        : preview == null
+        ? ScoreCellStatus.empty
+        : preview.selectable
+        ? ScoreCellStatus.available
+        : ScoreCellStatus.unavailable;
+    final shownScore = recorded ?? preview?.score;
+    final icon = switch (status) {
+      ScoreCellStatus.recorded => Icons.check,
+      ScoreCellStatus.available => Icons.add_circle_outline,
+      ScoreCellStatus.unavailable => Icons.block,
+      ScoreCellStatus.empty => null,
+    };
+
+    return Semantics(
+      key: Key('score-${category.id}-${player.id}'),
+      label: scoreLabel(
+        categoryLabel(category.id),
+        player.name,
+        shownScore,
+        status,
+        active,
+      ),
+      excludeSemantics: true,
+      child: Container(
+        key: Key('score-${category.id}-p$playerIndex-value'),
+        color: active ? tokens.gold.withValues(alpha: 0.2) : null,
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                shownScore?.toString() ?? '—',
+                style: tokens.bodyStyle.copyWith(
+                  fontWeight: status == ScoreCellStatus.available
+                      ? FontWeight.bold
+                      : null,
+                ),
+              ),
+            ),
+            if (icon != null) ...[
+              const SizedBox(width: 2),
+              Icon(icon, size: 14),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }

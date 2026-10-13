@@ -248,6 +248,36 @@ abstract class AppLocalizations {
   /// **'{category}, {player}, {score}'**
   String scoreCell(String category, String player, String score);
 
+  /// No description provided for @scoreAvailable.
+  ///
+  /// In pl, this message translates to:
+  /// **'Dostępne: {score} pkt'**
+  String scoreAvailable(int score);
+
+  /// No description provided for @scoreUnavailable.
+  ///
+  /// In pl, this message translates to:
+  /// **'Niedostępne: {score} pkt'**
+  String scoreUnavailable(int score);
+
+  /// No description provided for @scoreRecorded.
+  ///
+  /// In pl, this message translates to:
+  /// **'Zapisano: {score} pkt'**
+  String scoreRecorded(int score);
+
+  /// No description provided for @activeScoreCell.
+  ///
+  /// In pl, this message translates to:
+  /// **'aktywny gracz'**
+  String get activeScoreCell;
+
+  /// No description provided for @inactiveScoreCell.
+  ///
+  /// In pl, this message translates to:
+  /// **'gracz nieaktywny'**
+  String get inactiveScoreCell;
+
   /// No description provided for @notScored.
   ///
   /// In pl, this message translates to:
