@@ -50,4 +50,4 @@ The reviewed images retain the full score table width, a gold active-player colu
 - `./tool/verify.sh`: formatting passed, analysis clean, 77/77 tests passed.
 - `git diff --check`: passed after this evidence update.
 
-All independent-review findings have fixes and green local evidence. Scoped independent re-review remains required before the checkpoint can proceed to push and merge.
+All independent-review findings have fixes and green local evidence. Scoped independent re-review inspected the provider scope, retry-only error state, completed semantics, combined stress golden, and theme tokens; it approved the fixes with no remaining Critical, Important, or Minor findings. Broad final review remains required before the checkpoint can proceed to push and merge.
